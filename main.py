@@ -4296,6 +4296,7 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
                 add_points(st, 2)
                 reply = "Запись сохранена. +2 балла. ✅\n"
 
+            user_text = src_text
             est = None
 
             # Проверяем на штрих-код сначала, если доступен Open Food Facts
@@ -4342,7 +4343,7 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
                                 'protein_g': round(protein_portion, 1),
                                 'fat_g': round(fat_portion, 1),
                                 'carbs_g': round(carbs_portion, 1),
-                                'notes': f"📦 Open Food Facts (штрих-код): {barcode_result.get('name', 'Продукт')} ({user_grams}г)",
+                                'notes': f"📦 Open Food Facts (штрих-код): {barcode_result.get('name', user_text)} ({user_grams}г)",
                                 'source_data': {
                                     'grams': user_grams,
                                     'kcal_100g': kcal_100g,
@@ -5342,6 +5343,9 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
         
         user_grams = extract_portion_grams(user_text)
         logger.info(f"User grams: {user_grams}")
+
+        clean_query = re.sub(r'\d+\s*(?:г|гр|g|grams?)', '', user_text, flags=re.IGNORECASE).strip() or user_text
+        logger.info(f"Clean query: {clean_query}")
         
         # Выбираем стратегию поиска на основе маршрута
         result = None
@@ -5397,16 +5401,14 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
                                     logger.info(f"Found FatSecret result by barcode: {result.get('name', 'Unknown')}")
                     
                     # Поиск по названию если штрих-код не сработал
-                    if not result:
-                        clean_query = re.sub(r'\d+\s*(?:г|гр|g|grams?)', '', user_text, flags=re.IGNORECASE).strip()
-                        if clean_query:
-                            logger.info(f"Searching FatSecret by name: {clean_query}")
-                            food = await _fs_search_best(clean_query)
-                            if food:
-                                result = _fs_norm(food, user_grams, None)
-                                if result and result.get('kcal_100g'):
-                                    result['source'] = '🧩 FatSecret'
-                                    logger.info(f"Found FatSecret result by name: {result.get('name', 'Unknown')}")
+                    if not result and clean_query:
+                        logger.info(f"Searching FatSecret by name: {clean_query}")
+                        food = await _fs_search_best(clean_query)
+                        if food:
+                            result = _fs_norm(food, user_grams, None)
+                            if result and result.get('kcal_100g'):
+                                result['source'] = '🧩 FatSecret'
+                                logger.info(f"Found FatSecret result by name: {result.get('name', 'Unknown')}")
                                     
                 except Exception as e:
                     logger.warning(f"FatSecret fallback search failed: {e}")
@@ -5534,7 +5536,7 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
                 else:
                     source_display = '🔍 Умный поиск'
             
-            notes = f"{source_display}: {result.get('name', 'Продукт')} ({user_grams}г)"
+            notes = f"{source_display}: {result.get('name', clean_query)} ({user_grams}г)"
             
             return {
                 'kcal': int(result.get('kcal_100g', 0) * factor),
@@ -5569,7 +5571,7 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
                 else:
                     source_display = '🔍 Умный поиск'
             
-            notes = f"{source_display}: {result.get('name', 'Продукт')} (100г)"
+            notes = f"{source_display}: {result.get('name', clean_query)} (100г)"
             
             return {
                 'kcal': int(result.get('kcal_100g', 0)),

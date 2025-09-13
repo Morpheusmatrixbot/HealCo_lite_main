@@ -1618,7 +1618,8 @@ async def search_google_for_product(query: str) -> Optional[Dict[str, Any]]:
                 text_content = f"{title} {snippet}"
 
                 relevance_score = calculate_relevance_score(text_content, clean_query)
-                if relevance_score < 0.3:
+                # Пропускаем результаты с низкой релевантностью (< 0.9)
+                if relevance_score < 0.9:
                     continue
 
                 nutrition_data = extract_nutrition_from_text(text_content.lower(), clean_query)

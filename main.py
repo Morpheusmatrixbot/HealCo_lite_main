@@ -21,6 +21,8 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
 from requests_oauthlib import OAuth1
 
+from trainer import get_weekly_training_kcal
+
 from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -569,6 +571,15 @@ def calc_kbju_weight_loss(profile: Dict[str, Any]) -> Dict[str, Any]:
 
     bmr = mifflin_st_jeor(g, age, h, w)
     tdee = bmr * activity_multiplier_profile(profile["activity"])
+
+    # Дополнительные калории от тренировок по плану
+    training_plan = profile.get("workout_plan")
+    weekly_train_kcal = profile.get("workout_weekly_kcal")
+    if not weekly_train_kcal and training_plan:
+        weekly_train_kcal = get_weekly_training_kcal(training_plan)
+        profile["workout_weekly_kcal"] = weekly_train_kcal
+    daily_train_kcal = (weekly_train_kcal or 0) / 7.0
+    tdee += daily_train_kcal
     bmi, bmi_cat = calc_bmi(w, h)
 
     # Расчет целевых показателей в зависимости от цели
@@ -634,6 +645,8 @@ def calc_kbju_weight_loss(profile: Dict[str, Any]) -> Dict[str, Any]:
         "recommendations": recommendations,
         "micronutrients": micronutrient_needs,
         "note": "Расчеты основаны на данных USDA FDC и научных исследованиях. Итоговую калорийность не опускайте ниже BMR.",
+        "training_kcal_weekly": int(weekly_train_kcal or 0),
+        "training_plan_link": profile.get("workout_plan_link"),
     }
 
 def get_micronutrient_recommendations(gender: str, age: int, goal: str) -> Dict[str, str]:
@@ -3616,6 +3629,10 @@ async def show_diaries(update: Update, st: Dict[str, Any]):
             lines.append(
                 f"\nСегодняшняя сводка:\n— съедено: ~{eat} ккал; сожжено: ~{burn} ккал\n— рекомендация на похудение: ~{k['target_kcal']} ккал/сут"
             )
+            if k.get("training_plan_link") and k.get("training_kcal_weekly"):
+                lines.append(
+                    f"— учтён план тренировок: {k['training_plan_link']} (+{k['training_kcal_weekly']} ккал/нед.)"
+                )
             # Добавляем остаток калорий и БЖУ
             remaining_kcal = k['target_kcal'] - eat
             today_agg = _aggregate_food_day(foods, today_key())
@@ -3953,6 +3970,11 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE, st:
                 f"• Основной обмен (BMR): {k['bmr']} ккал/день",
                 f"• Полная потребность (TDEE): {k['tdee']} ккал/день"
             ]
+
+            if k.get("training_plan_link") and k.get("training_kcal_weekly"):
+                lines.append(
+                    f"• Учтён план тренировок: {k['training_plan_link']} (+{k['training_kcal_weekly']} ккал/нед.)"
+                )
 
             if k['goal'] == "Похудеть":
                 lines.extend([
@@ -4320,6 +4342,10 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
             if profile_complete(st["profile"]):
                 k = calc_kbju_weight_loss(st["profile"])
                 reply += f"\nСегодня: съедено ~{eat} ккал; сожжено ~{burn} ккал. Рекомендация: ~{k['target_kcal']} ккал. 📊"
+                if k.get("training_plan_link") and k.get("training_kcal_weekly"):
+                    reply += (
+                        f"\nУчтён план тренировок: {k['training_plan_link']} (+{k['training_kcal_weekly']} ккал/нед.)"
+                    )
             else:
                 reply += f"\nСегодня: съедено ~{eat} ккал; сожжено ~{burn} ккал. 📊"
             await update.message.reply_text(reply, reply_markup=role_keyboard(st.get("current_role")))
@@ -4431,7 +4457,8 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
                 st["tmp"]["last_workout"] = plan
                 add_points(st, 5)
                 st["awaiting"] = None
-                await update.message.reply_text(plan, reply_markup=yes_no_kb("save_workout"))
+                msg = await update.message.reply_text(plan, reply_markup=yes_no_kb("save_workout"))
+                st["tmp"]["last_workout_link"] = getattr(msg, "link", "")
                 await update.message.reply_text("Сохранить план? 🙂", reply_markup=role_keyboard("trainer"))
             else:
                 st["awaiting"] = "workout_inventory"
@@ -4445,7 +4472,8 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
             st["tmp"]["last_workout"] = plan
             add_points(st, 5)
             st["awaiting"] = None
-            await update.message.reply_text(plan, reply_markup=yes_no_kb("save_workout"))
+            msg = await update.message.reply_text(plan, reply_markup=yes_no_kb("save_workout"))
+            st["tmp"]["last_workout_link"] = getattr(msg, "link", "")
             await update.message.reply_text("Сохранить план? 🙂", reply_markup=role_keyboard("trainer"))
         elif awaiting == "menu_changes":
             changes = "" if text.lower() == "без изменений" else text
@@ -4479,7 +4507,8 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
             st["tmp"]["last_workout"] = plan
             add_points(st, 5)
             st["awaiting"] = None
-            await update.message.reply_text(plan, reply_markup=yes_no_kb("save_workout"))
+            msg = await update.message.reply_text(plan, reply_markup=yes_no_kb("save_workout"))
+            st["tmp"]["last_workout_link"] = getattr(msg, "link", "")
             await update.message.reply_text("Сохранить план? 🙂", reply_markup=role_keyboard("trainer"))
 
         # --- Зоны / VO2 ---
@@ -4918,9 +4947,11 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             answer = data.split(":", 1)[1]
             if answer == "yes":
                 last_workout = st["tmp"].get("last_workout", "")
-                # Извлекаем примерную калорийность из плана тренировок
-                kcal_match = re.search(r"Итого за неделю:\s*~?(\d+)\s*ккал", last_workout)
-                weekly_kcal = int(kcal_match.group(1)) if kcal_match else 1500
+                # Оцениваем калории по плану
+                weekly_kcal = get_weekly_training_kcal(last_workout)
+                if weekly_kcal <= 0:
+                    kcal_match = re.search(r"Итого за неделю:\s*~?(\d+)\s*ккал", last_workout)
+                    weekly_kcal = int(kcal_match.group(1)) if kcal_match else 1500
                 daily_kcal = weekly_kcal // 7  # Примерно делим на дни недели
 
                 st["diaries"]["train"].append({
@@ -4929,11 +4960,15 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "type": "план тренировок",
                     "kcal": daily_kcal
                 })
+                st["profile"]["workout_plan"] = last_workout
+                st["profile"]["workout_plan_link"] = st["tmp"].get("last_workout_link", "")
+                st["profile"]["workout_weekly_kcal"] = weekly_kcal
                 add_points(st, 2)
                 await query.edit_message_text(query.message.text + "\n\n✅ План сохранён в дневнике (+2 балла).")
             else:
                 await query.edit_message_text(query.message.text + "\n\n👍 Ок, не сохраняю план.")
             st["tmp"].pop("last_workout", None)
+            st["tmp"].pop("last_workout_link", None)
     except Exception as e:
         logger.exception(f"Callback error: {e}")
         await query.answer("Ошибка.")
@@ -5683,10 +5718,15 @@ async def generate_workout_via_llm(profile: Dict[str, Any], location: str, inven
 def persona_system(role: str, profile: Dict[str, Any]) -> str:
     """Системный промпт для персонализированного общения"""
     if role == "nutri":
+        train_link = profile.get("workout_plan_link")
+        train_kcal = profile.get("workout_weekly_kcal")
+        train_info = (
+            f" Тренировочный план: {train_link}, расход {train_kcal} ккал/неделю." if train_link and train_kcal else ""
+        )
         return (
             f"Вы профессиональный нутрициолог с опытом работы 15+ лет. "
             f"Отвечайте на русском языке, профессионально, но дружелюбно. "
-            f"Учитывайте индивидуальные особенности клиента. "
+            f"Учитывайте индивидуальные особенности клиента.{train_info} "
             f"Клиент: {profile.get('gender', '')}, {profile.get('age', '')} лет, "
             f"цель: {profile.get('goal', '')}, аллергии: {profile.get('allergies', 'нет')}, "
             f"заболевания: {profile.get('conditions', 'нет')}. "
@@ -6006,9 +6046,17 @@ async def handle_onboarding(update: Update, context: ContextTypes.DEFAULT_TYPE, 
             f"• Белки: {k['protein_g']} г/день",
             f"• Жиры: {k['fat_g']} г/день",
             f"• Углеводы: {k['carbs_g']} г/день",
-            "",
-            "💡 ЧТО ДЕЛАТЬ ДАЛЬШЕ:"
         ]
+
+        if k.get("training_plan_link") and k.get("training_kcal_weekly"):
+            summary_lines.append(
+                f"🏋️ План тренировок: {k['training_plan_link']} (учтено {k['training_kcal_weekly']} ккал/нед.)"
+            )
+
+        summary_lines.extend([
+            "",
+            "💡 ЧТО ДЕЛАТЬ ДАЛЬШЕ:",
+        ])
 
         # Добавляем рекомендации в зависимости от цели
         if profile['goal'] == "Похудеть":

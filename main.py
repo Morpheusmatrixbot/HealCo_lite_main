@@ -5118,21 +5118,6 @@ def _fix_portion_leak(res: dict) -> dict:
     for k in ("kcal","protein","fat","carbs"):
         maybe_fix(k)
     return r
-    s = r.get("serving_g") or r.get("portion_g")
-    if not s or s <= 0: 
-        return r
-    def maybe_fix(kind: str):
-        serv = r.get(f"{kind}_serv") or r.get(f"{kind}_portion")
-        m100 = r.get(f"{kind}_100g")
-        if serv is None: 
-            return
-        exp = serv * 100.0 / s
-        # если «на 100 г» отсутствует ИЛИ явно не совпадает с пересчетом — перепишем
-        if (m100 is None) or (abs(exp - m100) / max(1.0, exp) > 0.5):
-            r[f"{kind}_100g"] = exp
-    for k in ("kcal","protein","fat","carbs"):
-        maybe_fix(k)
-    return r
 
 # жесткий фильтр по правдоподобию для шоколада/батончиков и пр.
 def _hard_plausible(res: dict, cat: str | None) -> bool:

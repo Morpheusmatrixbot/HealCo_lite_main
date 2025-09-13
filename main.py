@@ -23,6 +23,7 @@ from requests_oauthlib import OAuth1
 from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
+from trainer import get_weekly_training_kcal
 
 # ========= ЛОГИ =========
 logging.basicConfig(
@@ -567,6 +568,10 @@ def calc_kbju_weight_loss(profile: Dict[str, Any]) -> Dict[str, Any]:
 
     bmr = mifflin_st_jeor(g, age, h, w)
     tdee = bmr * activity_multiplier_profile(profile["activity"])
+    plan = profile.get("workout_plan", "")
+    training_kcal_week = get_weekly_training_kcal(plan, w) if plan else 0
+    if training_kcal_week:
+        tdee += training_kcal_week / 7.0
     bmi, bmi_cat = calc_bmi(w, h)
 
     # Расчет целевых показателей в зависимости от цели
@@ -631,6 +636,8 @@ def calc_kbju_weight_loss(profile: Dict[str, Any]) -> Dict[str, Any]:
         "goal": goal,
         "recommendations": recommendations,
         "micronutrients": micronutrient_needs,
+        "training_kcal_weekly": int(round(training_kcal_week)),
+        "training_plan_link": profile.get("workout_plan_link"),
         "note": "Расчеты основаны на данных USDA FDC и научных исследованиях. Итоговую калорийность не опускайте ниже BMR.",
     }
 
@@ -3952,6 +3959,12 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE, st:
                 f"• Полная потребность (TDEE): {k['tdee']} ккал/день"
             ]
 
+            if k.get("training_kcal_weekly"):
+                lines.extend([
+                    f"• Учтены тренировки: +{k['training_kcal_weekly']} ккал/нед (~{k['training_kcal_weekly']//7} ккал/день)",
+                    f"• План тренировок: {k.get('training_plan_link', 'не указан')}"
+                ])
+
             if k['goal'] == "Похудеть":
                 lines.extend([
                     f"• Рекомендуемый дефицит: {k['deficit_pct']}% ({abs(k['deficit_kcal'])} ккал)",
@@ -4918,8 +4931,11 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 last_workout = st["tmp"].get("last_workout", "")
                 # Извлекаем примерную калорийность из плана тренировок
                 kcal_match = re.search(r"Итого за неделю:\s*~?(\d+)\s*ккал", last_workout)
-                weekly_kcal = int(kcal_match.group(1)) if kcal_match else 1500
+                weekly_kcal = int(kcal_match.group(1)) if kcal_match else get_weekly_training_kcal(last_workout)
                 daily_kcal = weekly_kcal // 7  # Примерно делим на дни недели
+
+                st["profile"]["workout_plan"] = last_workout
+                st["profile"]["workout_plan_link"] = f"https://t.me/c/{query.message.chat.id}/{query.message.message_id}"
 
                 st["diaries"]["train"].append({
                     "ts": now_ts(),
@@ -5653,6 +5669,9 @@ async def generate_workout_via_llm(profile: Dict[str, Any], location: str, inven
 def persona_system(role: str, profile: Dict[str, Any]) -> str:
     """Системный промпт для персонализированного общения"""
     if role == "nutri":
+        plan = profile.get("workout_plan", "")
+        weekly_kcal = get_weekly_training_kcal(plan, float(profile.get("weight_kg", 70))) if plan else 0
+        plan_note = f"Учтите, что у клиента есть тренировочный план с расходом около {weekly_kcal} ккал в неделю. " if plan else ""
         return (
             f"Вы профессиональный нутрициолог с опытом работы 15+ лет. "
             f"Отвечайте на русском языке, профессионально, но дружелюбно. "
@@ -5660,6 +5679,7 @@ def persona_system(role: str, profile: Dict[str, Any]) -> str:
             f"Клиент: {profile.get('gender', '')}, {profile.get('age', '')} лет, "
             f"цель: {profile.get('goal', '')}, аллергии: {profile.get('allergies', 'нет')}, "
             f"заболевания: {profile.get('conditions', 'нет')}. "
+            f"{plan_note}"
             f"Используйте научно обоснованные рекомендации и актуальные данные о питании."
         )
     elif role == "trainer":

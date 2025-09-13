@@ -1,0 +1,501 @@
+2025-09-08 14:22:51,013 [INFO] healco-lite: LLM client initialized: provider=gemini, available=✅
+2025-09-08 14:22:51,220 [INFO] healco-lite: Keep‑alive server started
+2025-09-08 14:22:51,226 [INFO] werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.31.70.130:5000
+2025-09-08 14:22:51,226 [INFO] werkzeug: [33mPress CTRL+C to quit[0m
+2025-09-08 14:22:51,597 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getMe "HTTP/1.1 200 OK"
+2025-09-08 14:22:51,783 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/deleteWebhook "HTTP/1.1 200 OK"
+2025-09-08 14:22:51,784 [INFO] telegram.ext.Application: Application started
+2025-09-08 14:23:02,341 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:23:12,528 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:23:22,714 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:23:32,901 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:23:43,087 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:23:44,101 [INFO] healco-lite: LLM client initialized: provider=gemini, available=✅
+2025-09-08 14:23:47,179 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 14:23:47,212 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-08 14:23:47,213 [INFO] healco-lite: Branded search: clean='bombbar protein pancake', grams=40.0, ml=None
+2025-09-08 14:23:47,213 [INFO] healco-lite: Trying FatSecret API...
+2025-09-08 14:23:47,214 [INFO] healco-lite: Searching FatSecret by name: bombbar protein pancake
+2025-09-08 14:23:48,140 [INFO] healco-lite: Google CSE branded search: 'bombbar protein pancake' with nutrition terms
+2025-09-08 14:23:48,748 [INFO] httpx: HTTP Request: GET https://www.googleapis.com/customsearch/v1?key=AIzaSyC3e1UeIqzRi-01vJhbZKXE0ZhEgGpnph0&cx=e70ce979a44b54549&q=site%3Aozon.ru+OR+site%3Awildberries.ru+OR+site%3Avkusvill.ru+OR+site%3Aperekrestok.ru+OR+site%3Alenta.com+OR+site%3A5ka.ru+OR+site%3Ametro-cc.ru+OR+site%3Aauchan.ru+-inurl%3Aquestions+-inurl%3Areviews+-inurl%3Aotzyv+-inurl%3Aforum&num=10&exactTerms=bombbar+protein+pancake&orTerms=%D0%BA%D0%B0%D0%BB%D0%BE%D1%80%D0%B8%D0%B8%7C%D0%BF%D0%B8%D1%89%D0%B5%D0%B2%D0%B0%D1%8F+%D1%86%D0%B5%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C%7C%D0%9A%D0%91%D0%96%D0%A3%7Cnutrition+facts%7C%D0%BF%D0%B8%D1%82%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D1%86%D0%B5%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C+%22%D0%BD%D0%B0+100+%D0%B3%22&safe=off&lr=lang_ru%7Clang_en&hl=ru "HTTP/1.1 200 OK"
+2025-09-08 14:23:48,754 [INFO] healco-lite: Found 10 filtered URLs via optimized Google CSE
+2025-09-08 14:23:49,949 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/bombbar-proteinovye-pankeyki-bez-sahara-protein-pancake-molochnyy-krem-10sht-h-40g-251823824/
+2025-09-08 14:23:49,952 [INFO] healco-lite: No calories found in regex extraction
+2025-09-08 14:23:49,952 [INFO] healco-lite: Regex nutrition result: None
+2025-09-08 14:23:49,952 [INFO] healco-lite: Trying GPT extraction...
+2025-09-08 14:23:50,897 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 14:23:50,899 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-08 14:23:50,899 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-08 14:23:50,909 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-08 14:23:50,910 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/bombbar-proteinovye-pankeyki-bez-sahara-protein-pancake-molochnyy-krem-10sht-h-40g-251823824/
+2025-09-08 14:23:51,798 [INFO] healco-lite: Parsing HTML from: https://www.wildberries.ru/catalog/26426823/detail.aspx
+2025-09-08 14:23:51,799 [INFO] healco-lite: No calories found in regex extraction
+2025-09-08 14:23:51,799 [INFO] healco-lite: Regex nutrition result: None
+2025-09-08 14:23:51,799 [INFO] healco-lite: Trying GPT extraction...
+2025-09-08 14:23:52,785 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 14:23:52,798 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-08 14:23:52,798 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-08 14:23:52,798 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-08 14:23:52,799 [INFO] healco-lite: No nutrition data found on: https://www.wildberries.ru/catalog/26426823/detail.aspx
+2025-09-08 14:23:53,272 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:23:53,398 [INFO] werkzeug: 172.31.70.130 - - [08/Sep/2025 14:23:53] "GET / HTTP/1.1" 200 -
+2025-09-08 14:23:54,001 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/category/sportivnoe-pitanie-111000000/bombbar-87353927/review/
+2025-09-08 14:23:54,006 [INFO] healco-lite: No calories found in regex extraction
+2025-09-08 14:23:54,006 [INFO] healco-lite: Regex nutrition result: None
+2025-09-08 14:23:54,007 [INFO] healco-lite: Trying GPT extraction...
+2025-09-08 14:38:29,291 [INFO] healco-lite: LLM client initialized: provider=gemini, available=✅
+2025-09-08 14:38:29,477 [INFO] healco-lite: Keep‑alive server started
+2025-09-08 14:38:29,483 [INFO] werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.31.68.226:5000
+2025-09-08 14:38:29,483 [INFO] werkzeug: [33mPress CTRL+C to quit[0m
+2025-09-08 14:38:29,898 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getMe "HTTP/1.1 200 OK"
+2025-09-08 14:38:30,086 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/deleteWebhook "HTTP/1.1 200 OK"
+2025-09-08 14:38:30,150 [INFO] telegram.ext.Application: Application started
+2025-09-08 14:38:31,446 [INFO] werkzeug: 172.31.68.226 - - [08/Sep/2025 14:38:31] "GET / HTTP/1.1" 200 -
+2025-09-08 14:38:40,708 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:38:50,895 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:39:01,082 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:39:11,268 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:39:21,457 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:39:27,658 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:39:28,244 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/sendMessage "HTTP/1.1 200 OK"
+2025-09-08 14:39:35,308 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:39:35,946 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/sendMessage "HTTP/1.1 200 OK"
+2025-09-08 14:39:38,793 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 14:39:38,819 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-08 14:39:38,821 [INFO] healco-lite: Branded search: clean='Bombbar protein pancake', grams=40.0, ml=None
+2025-09-08 14:39:38,821 [INFO] healco-lite: Trying FatSecret API...
+2025-09-08 14:39:38,821 [INFO] healco-lite: Searching FatSecret by name: Bombbar protein pancake
+2025-09-08 14:39:39,770 [INFO] healco-lite: Google CSE branded search: 'Bombbar protein pancake' with nutrition terms
+2025-09-08 14:39:40,274 [INFO] httpx: HTTP Request: GET https://www.googleapis.com/customsearch/v1?key=AIzaSyC3e1UeIqzRi-01vJhbZKXE0ZhEgGpnph0&cx=e70ce979a44b54549&q=site%3Aozon.ru+OR+site%3Awildberries.ru+OR+site%3Avkusvill.ru+OR+site%3Aperekrestok.ru+OR+site%3Alenta.com+OR+site%3A5ka.ru+OR+site%3Ametro-cc.ru+OR+site%3Aauchan.ru+-inurl%3Aquestions+-inurl%3Areviews+-inurl%3Aotzyv+-inurl%3Aforum&num=10&exactTerms=Bombbar+protein+pancake&orTerms=%D0%BA%D0%B0%D0%BB%D0%BE%D1%80%D0%B8%D0%B8%7C%D0%BF%D0%B8%D1%89%D0%B5%D0%B2%D0%B0%D1%8F+%D1%86%D0%B5%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C%7C%D0%9A%D0%91%D0%96%D0%A3%7Cnutrition+facts%7C%D0%BF%D0%B8%D1%82%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D1%86%D0%B5%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C+%22%D0%BD%D0%B0+100+%D0%B3%22&safe=off&lr=lang_ru%7Clang_en&hl=ru "HTTP/1.1 200 OK"
+2025-09-08 14:39:40,276 [INFO] healco-lite: Found 10 filtered URLs via optimized Google CSE
+2025-09-08 14:39:41,436 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/bombbar-proteinovye-pankeyki-bez-sahara-protein-pancake-molochnyy-krem-10sht-h-40g-251823824/
+2025-09-08 14:39:41,496 [INFO] healco-lite: No calories found in regex extraction
+2025-09-08 14:39:41,496 [INFO] healco-lite: Regex nutrition result: None
+2025-09-08 14:39:41,496 [INFO] healco-lite: Trying GPT extraction...
+2025-09-08 14:39:43,965 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 14:39:44,024 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-08 14:39:44,025 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-08 14:39:44,025 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-08 14:39:45,497 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:39:45,605 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/bombbar-proteinovye-pankeyki-bez-sahara-protein-pancake-molochnyy-krem-10sht-h-40g-251823824/
+2025-09-08 14:39:46,491 [INFO] healco-lite: Parsing HTML from: https://www.wildberries.ru/catalog/26426823/detail.aspx
+2025-09-08 14:39:46,491 [INFO] healco-lite: No calories found in regex extraction
+2025-09-08 14:39:46,491 [INFO] healco-lite: Regex nutrition result: None
+2025-09-08 14:39:46,599 [INFO] healco-lite: Trying GPT extraction...
+2025-09-08 14:39:47,633 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 14:39:47,635 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-08 14:39:47,635 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-08 14:39:47,855 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-08 14:39:47,855 [INFO] healco-lite: No nutrition data found on: https://www.wildberries.ru/catalog/26426823/detail.aspx
+2025-09-08 14:39:49,010 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/category/sportivnoe-pitanie-111000000/bombbar-87353927/review/
+2025-09-08 14:39:49,011 [INFO] healco-lite: No calories found in regex extraction
+2025-09-08 14:39:49,066 [INFO] healco-lite: Regex nutrition result: None
+2025-09-08 14:39:49,066 [INFO] healco-lite: Trying GPT extraction...
+2025-09-08 14:39:49,959 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 14:39:50,026 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-08 14:39:50,026 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-08 14:39:50,026 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-08 14:39:51,633 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/category/sportivnoe-pitanie-111000000/bombbar-87353927/review/
+2025-09-08 14:39:52,797 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/gotovye-proteinovye-pankeyki-bombbar-s-nachinkoy-molochnyy-krem-40g-po-10-bez-sahara-642995207/
+2025-09-08 14:39:52,797 [INFO] healco-lite: No calories found in regex extraction
+2025-09-08 14:39:52,923 [INFO] healco-lite: Regex nutrition result: None
+2025-09-08 14:39:52,923 [INFO] healco-lite: Trying GPT extraction...
+2025-09-08 14:39:55,753 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:39:56,520 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 14:39:56,522 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-08 14:39:56,522 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-08 14:39:56,625 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-08 14:39:56,625 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/gotovye-proteinovye-pankeyki-bombbar-s-nachinkoy-molochnyy-krem-40g-po-10-bez-sahara-642995207/
+2025-09-08 14:39:57,817 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/bombbar-proteinovaya-smes-bez-sahara-dlya-vypechki-pankeykov-i-blinov-tvorog-420gr-216966504/
+2025-09-08 14:39:57,915 [INFO] healco-lite: No calories found in regex extraction
+2025-09-08 14:39:57,915 [INFO] healco-lite: Regex nutrition result: None
+2025-09-08 14:39:57,915 [INFO] healco-lite: Trying GPT extraction...
+2025-09-08 14:39:58,800 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 14:39:58,801 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-08 14:39:58,801 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-08 14:39:58,880 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-08 14:40:00,328 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/bombbar-proteinovaya-smes-bez-sahara-dlya-vypechki-pankeykov-i-blinov-tvorog-420gr-216966504/
+2025-09-08 14:40:01,515 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/gotovye-proteinovye-pankeyki-bombbar-s-nachinkoy-bananovyy-krem-40g-po-10-shtuk-bez-sahara-476993444/
+2025-09-08 14:40:01,613 [INFO] healco-lite: No calories found in regex extraction
+2025-09-08 14:40:01,613 [INFO] healco-lite: Regex nutrition result: None
+2025-09-08 14:40:01,613 [INFO] healco-lite: Trying GPT extraction...
+2025-09-08 14:40:02,727 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 14:40:02,728 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-08 14:40:02,729 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-08 14:40:02,840 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-08 14:40:04,483 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/gotovye-proteinovye-pankeyki-bombbar-s-nachinkoy-bananovyy-krem-40g-po-10-shtuk-bez-sahara-476993444/
+2025-09-08 14:40:05,665 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/bombbar-proteinovaya-smes-bez-sahara-dlya-vypechki-pankeykov-i-blinov-malina-420gr-216966505/
+2025-09-08 14:40:05,733 [INFO] healco-lite: No calories found in regex extraction
+2025-09-08 14:40:05,734 [INFO] healco-lite: Regex nutrition result: None
+2025-09-08 14:40:05,734 [INFO] healco-lite: Trying GPT extraction...
+2025-09-08 14:40:05,940 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:40:06,618 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 14:40:06,620 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-08 14:40:06,740 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-08 14:40:06,741 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-08 14:40:08,189 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/bombbar-proteinovaya-smes-bez-sahara-dlya-vypechki-pankeykov-i-blinov-malina-420gr-216966505/
+2025-09-08 14:40:09,564 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/proteinovye-pankeyki-bombbar-bez-sahara-assorti-vkusov-6-sht-gotovye-pankeyki-s-nachinkoy-524482680/
+2025-09-08 14:40:09,564 [INFO] healco-lite: No calories found in regex extraction
+2025-09-08 14:40:09,564 [INFO] healco-lite: Regex nutrition result: None
+2025-09-08 14:40:09,715 [INFO] healco-lite: Trying GPT extraction...
+2025-09-08 14:40:10,777 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 14:40:10,778 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-08 14:40:10,923 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-08 14:40:10,924 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-08 14:40:12,140 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/proteinovye-pankeyki-bombbar-bez-sahara-assorti-vkusov-6-sht-gotovye-pankeyki-s-nachinkoy-524482680/
+2025-09-08 14:40:14,091 [INFO] healco-lite: Parsing HTML from: https://global.wildberries.ru/catalog/tags/skup-proteina
+2025-09-08 14:40:14,094 [INFO] healco-lite: No calories found in regex extraction
+2025-09-08 14:40:14,094 [INFO] healco-lite: Regex nutrition result: None
+2025-09-08 14:40:14,169 [INFO] healco-lite: Trying GPT extraction...
+2025-09-08 14:40:14,782 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 14:40:14,783 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-08 14:40:14,852 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-08 14:40:14,852 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-08 14:40:16,126 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:40:26,446 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:40:32,929 [INFO] healco-lite: No nutrition data found on: https://global.wildberries.ru/catalog/tags/skup-proteina
+2025-09-08 14:40:33,802 [INFO] healco-lite: Parsing HTML from: https://www.wildberries.ru/catalog/tags/guarana
+2025-09-08 14:40:33,854 [INFO] healco-lite: No calories found in regex extraction
+2025-09-08 14:40:33,854 [INFO] healco-lite: Regex nutrition result: None
+2025-09-08 14:40:33,854 [INFO] healco-lite: Trying GPT extraction...
+2025-09-08 14:40:34,579 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-08 14:40:34,581 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-08 14:40:34,581 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-08 14:40:34,672 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-08 14:40:34,672 [INFO] healco-lite: No nutrition data found on: https://www.wildberries.ru/catalog/tags/guarana
+2025-09-08 14:40:34,760 [INFO] healco-lite: Healco: trying Vision OCR on image search for: Bombbar protein pancake
+2025-09-08 14:40:34,848 [WARNING] healco-lite: Google CSE images returned status 400
+2025-09-08 14:40:34,910 [INFO] healco-lite: Found 0 candidates before filtering
+2025-09-08 14:40:34,910 [INFO] healco-lite: After branded plausibility filter: 0 candidates
+2025-09-08 14:40:34,973 [INFO] healco-lite: No candidates passed plausibility filter, trying without filter
+2025-09-08 14:40:34,973 [INFO] healco-lite: No branded product found for: Bombbar protein pancake 40г
+2025-09-08 14:40:35,031 [INFO] healco-lite: Searching USDA FDC for: 'Bombbar protein pancake 40г'
+2025-09-08 14:40:36,632 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:40:37,077 [INFO] healco-lite: USDA extraction results: kcal=268.0, protein=6.08, fat=14.8, carbs=27.8
+2025-09-08 14:40:37,077 [INFO] healco-lite: Found USDA result: Potato pancakes with score 133
+2025-09-08 14:40:37,728 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/sendMessage "HTTP/1.1 200 OK"
+2025-09-08 14:40:46,877 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:40:57,072 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:41:07,257 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-08 14:41:17,445 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 08:59:49,967 [INFO] healco-lite: LLM client initialized: provider=gemini, available=✅
+2025-09-09 08:59:50,434 [INFO] healco-lite: Keep‑alive server started
+2025-09-09 08:59:50,444 [INFO] werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.31.69.130:5000
+2025-09-09 08:59:50,444 [INFO] werkzeug: [33mPress CTRL+C to quit[0m
+2025-09-09 08:59:50,796 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getMe "HTTP/1.1 200 OK"
+2025-09-09 08:59:50,983 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/deleteWebhook "HTTP/1.1 200 OK"
+2025-09-09 08:59:50,984 [INFO] telegram.ext.Application: Application started
+2025-09-09 08:59:52,644 [INFO] werkzeug: 172.31.69.130 - - [09/Sep/2025 08:59:52] "GET / HTTP/1.1" 200 -
+2025-09-09 09:00:01,545 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:00:11,729 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:00:21,932 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:00:32,118 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:00:42,303 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:00:52,488 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:01:02,675 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:01:12,860 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:01:23,045 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:01:33,229 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:01:43,415 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:01:53,601 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:02:03,788 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:02:13,972 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:02:24,158 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:02:34,343 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:02:44,530 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:02:54,714 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:03:00,313 [INFO] healco-lite: LLM client initialized: provider=gemini, available=✅
+2025-09-09 09:03:00,315 [INFO] healco-lite: === AI MEAL SEARCH START ===
+2025-09-09 09:03:00,316 [INFO] healco-lite: Query: 'bombbar protein pancake 40г'
+2025-09-09 09:03:03,330 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:03:03,406 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:03:03,406 [INFO] healco-lite: Normalized query: {'clean_text_original': 'bombbar protein pancake 40г', 'portion_grams': 40, 'portion_ml': None, 'query_type': 'brand', 'brand_text': 'bombbar protein pancake', 'base_en': None, 'method_en': None, 'usda_queries': [], 'brand_queries': ['bombbar protein pancake']}
+2025-09-09 09:03:03,407 [INFO] healco-lite: Route info: {'path': 'brand', 'queries': ['bombbar protein pancake'], 'grams': 40, 'base_en': None}
+2025-09-09 09:03:03,407 [INFO] healco-lite: User grams: 40.0
+2025-09-09 09:03:03,408 [INFO] healco-lite: === BRANDED SEARCH ===
+2025-09-09 09:03:03,408 [INFO] healco-lite: Trying branded query: 'bombbar protein pancake'
+2025-09-09 09:03:03,409 [INFO] healco-lite: Branded search: clean='bombbar protein pancake', grams=None, ml=None
+2025-09-09 09:03:03,409 [INFO] healco-lite: Trying FatSecret API...
+2025-09-09 09:03:03,409 [INFO] healco-lite: Searching FatSecret by name: bombbar protein pancake
+2025-09-09 09:03:04,355 [INFO] healco-lite: Google CSE branded search: 'bombbar protein pancake' with nutrition terms
+2025-09-09 09:03:04,899 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:03:04,971 [INFO] httpx: HTTP Request: GET https://www.googleapis.com/customsearch/v1?key=AIzaSyC3e1UeIqzRi-01vJhbZKXE0ZhEgGpnph0&cx=e70ce979a44b54549&q=site%3Aozon.ru+OR+site%3Awildberries.ru+OR+site%3Avkusvill.ru+OR+site%3Aperekrestok.ru+OR+site%3Alenta.com+OR+site%3A5ka.ru+OR+site%3Ametro-cc.ru+OR+site%3Aauchan.ru+-inurl%3Aquestions+-inurl%3Areviews+-inurl%3Aotzyv+-inurl%3Aforum&num=10&exactTerms=bombbar+protein+pancake&orTerms=%D0%BA%D0%B0%D0%BB%D0%BE%D1%80%D0%B8%D0%B8%7C%D0%BF%D0%B8%D1%89%D0%B5%D0%B2%D0%B0%D1%8F+%D1%86%D0%B5%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C%7C%D0%9A%D0%91%D0%96%D0%A3%7Cnutrition+facts%7C%D0%BF%D0%B8%D1%82%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D1%86%D0%B5%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C+%22%D0%BD%D0%B0+100+%D0%B3%22&safe=off&lr=lang_ru%7Clang_en&hl=ru "HTTP/1.1 200 OK"
+2025-09-09 09:03:04,977 [INFO] healco-lite: Found 10 filtered URLs via optimized Google CSE
+2025-09-09 09:03:06,184 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/bombbar-proteinovye-pankeyki-bez-sahara-protein-pancake-molochnyy-krem-10sht-h-40g-251823824/
+2025-09-09 09:03:06,186 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:03:06,187 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:03:06,187 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:03:07,675 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:03:07,677 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:03:07,678 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:03:07,678 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:03:07,679 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/bombbar-proteinovye-pankeyki-bez-sahara-protein-pancake-molochnyy-krem-10sht-h-40g-251823824/
+2025-09-09 09:03:08,848 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/category/sportivnoe-pitanie-111000000/bombbar-87353927/review/
+2025-09-09 09:03:08,848 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:03:08,849 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:03:08,849 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:03:11,680 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:03:11,683 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:03:11,683 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:03:11,684 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:03:11,684 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/category/sportivnoe-pitanie-111000000/bombbar-87353927/review/
+2025-09-09 09:03:12,881 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/gotovye-proteinovye-pankeyki-bombbar-s-nachinkoy-molochnyy-krem-40g-po-10-bez-sahara-642995207/
+2025-09-09 09:03:12,882 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:03:12,882 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:03:12,883 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:03:13,861 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:03:13,864 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:03:13,864 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:03:13,864 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:03:13,864 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/gotovye-proteinovye-pankeyki-bombbar-s-nachinkoy-molochnyy-krem-40g-po-10-bez-sahara-642995207/
+2025-09-09 09:03:15,086 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:03:15,454 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/bombbar-proteinovaya-smes-bez-sahara-dlya-vypechki-pankeykov-i-blinov-tvorog-420gr-216966504/
+2025-09-09 09:03:15,455 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:03:15,455 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:03:15,456 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:03:18,387 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:03:18,389 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:03:18,390 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:03:18,390 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:03:18,390 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/bombbar-proteinovaya-smes-bez-sahara-dlya-vypechki-pankeykov-i-blinov-tvorog-420gr-216966504/
+2025-09-09 09:03:19,267 [INFO] healco-lite: Parsing HTML from: https://www.wildberries.ru/catalog/26426823/detail.aspx
+2025-09-09 09:03:19,268 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:03:19,268 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:03:19,269 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:03:20,071 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:03:20,073 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:03:20,074 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:03:20,074 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:03:20,074 [INFO] healco-lite: No nutrition data found on: https://www.wildberries.ru/catalog/26426823/detail.aspx
+2025-09-09 09:03:21,654 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/gotovye-proteinovye-pankeyki-bombbar-s-nachinkoy-bananovyy-krem-40g-po-10-shtuk-bez-sahara-476993444/
+2025-09-09 09:03:21,655 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:03:21,656 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:03:21,656 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:03:22,571 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:03:22,573 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:03:22,573 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:03:22,573 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:03:22,574 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/gotovye-proteinovye-pankeyki-bombbar-s-nachinkoy-bananovyy-krem-40g-po-10-shtuk-bez-sahara-476993444/
+2025-09-09 09:03:23,774 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/bombbar-proteinovaya-smes-bez-sahara-dlya-vypechki-pankeykov-i-blinov-malina-420gr-216966505/
+2025-09-09 09:03:23,775 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:03:23,775 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:03:23,775 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:03:25,272 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:03:25,766 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:03:25,768 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:03:25,768 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:03:25,769 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:03:25,769 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/bombbar-proteinovaya-smes-bez-sahara-dlya-vypechki-pankeykov-i-blinov-malina-420gr-216966505/
+2025-09-09 09:03:26,961 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/proteinovye-pankeyki-bombbar-bez-sahara-assorti-vkusov-6-sht-gotovye-pankeyki-s-nachinkoy-524482680/
+2025-09-09 09:03:26,962 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:03:26,962 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:03:26,962 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:03:28,129 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:03:28,131 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:03:28,132 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:03:28,132 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:03:28,132 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/proteinovye-pankeyki-bombbar-bez-sahara-assorti-vkusov-6-sht-gotovye-pankeyki-s-nachinkoy-524482680/
+2025-09-09 09:03:29,031 [INFO] healco-lite: Parsing HTML from: https://www.wildberries.ru/catalog/sport/sportivnoe-pitanie/tags/dimeksid-99-procentov
+2025-09-09 09:03:29,031 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:03:29,032 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:03:29,032 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:03:30,134 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:03:30,136 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:03:30,136 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:03:30,137 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:03:30,137 [INFO] healco-lite: No nutrition data found on: https://www.wildberries.ru/catalog/sport/sportivnoe-pitanie/tags/dimeksid-99-procentov
+2025-09-09 09:03:31,036 [INFO] healco-lite: Parsing HTML from: https://www.wildberries.ru/catalog/sport/sportivnoe-pitanie/tags/geiner-halal
+2025-09-09 09:03:31,037 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:03:31,037 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:03:31,037 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:03:32,705 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:03:32,708 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:03:32,708 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:03:32,708 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:03:32,708 [INFO] healco-lite: No nutrition data found on: https://www.wildberries.ru/catalog/sport/sportivnoe-pitanie/tags/geiner-halal
+2025-09-09 09:03:32,709 [INFO] healco-lite: Healco: trying Vision OCR on image search for: bombbar protein pancake
+2025-09-09 09:03:32,804 [WARNING] healco-lite: Google CSE images returned status 400
+2025-09-09 09:03:32,805 [INFO] healco-lite: Found 0 candidates before filtering
+2025-09-09 09:03:32,806 [INFO] healco-lite: After branded plausibility filter: 0 candidates
+2025-09-09 09:03:32,806 [INFO] healco-lite: No candidates passed plausibility filter, trying without filter
+2025-09-09 09:03:32,806 [INFO] healco-lite: No branded product found for: bombbar protein pancake
+2025-09-09 09:03:32,807 [INFO] healco-lite: No branded result found, trying Google search fallback
+2025-09-09 09:03:32,807 [INFO] healco-lite: Detected branded product: bombbar protein pancake 40г
+2025-09-09 09:03:32,807 [ERROR] healco-lite: Google search error: 'coroutine' object has no attribute 'get'
+2025-09-09 09:03:32,814 [INFO] healco-lite: === FALLBACK SEARCHES ===
+2025-09-09 09:03:32,814 [INFO] healco-lite: Trying FatSecret API as fallback...
+2025-09-09 09:03:32,815 [INFO] healco-lite: Searching FatSecret by name: bombbar protein pancake
+2025-09-09 09:03:33,713 [INFO] healco-lite: Trying typical nutrition data...
+2025-09-09 09:03:33,713 [INFO] healco-lite: Trying external JSONL database...
+2025-09-09 09:03:35,457 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:03:45,642 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:03:55,828 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:04:06,017 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:04:16,203 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:04:26,387 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:04:36,572 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:04:46,759 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:04:56,944 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:05:07,130 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:05:17,315 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:05:27,501 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:05:37,686 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:05:47,871 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:05:58,057 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:06:08,243 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:06:18,428 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:06:23,831 [INFO] healco-lite: LLM client initialized: provider=gemini, available=✅
+2025-09-09 09:06:25,437 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:06:25,498 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:06:25,500 [INFO] healco-lite: Branded search: clean='bombbar protein pancake', grams=40.0, ml=None
+2025-09-09 09:06:25,500 [INFO] healco-lite: Trying FatSecret API...
+2025-09-09 09:06:25,500 [INFO] healco-lite: Searching FatSecret by name: bombbar protein pancake
+2025-09-09 09:06:26,416 [INFO] healco-lite: Google CSE branded search: 'bombbar protein pancake' with nutrition terms
+2025-09-09 09:06:27,050 [INFO] httpx: HTTP Request: GET https://www.googleapis.com/customsearch/v1?key=AIzaSyC3e1UeIqzRi-01vJhbZKXE0ZhEgGpnph0&cx=e70ce979a44b54549&q=site%3Aozon.ru+OR+site%3Awildberries.ru+OR+site%3Avkusvill.ru+OR+site%3Aperekrestok.ru+OR+site%3Alenta.com+OR+site%3A5ka.ru+OR+site%3Ametro-cc.ru+OR+site%3Aauchan.ru+-inurl%3Aquestions+-inurl%3Areviews+-inurl%3Aotzyv+-inurl%3Aforum&num=10&exactTerms=bombbar+protein+pancake&orTerms=%D0%BA%D0%B0%D0%BB%D0%BE%D1%80%D0%B8%D0%B8%7C%D0%BF%D0%B8%D1%89%D0%B5%D0%B2%D0%B0%D1%8F+%D1%86%D0%B5%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C%7C%D0%9A%D0%91%D0%96%D0%A3%7Cnutrition+facts%7C%D0%BF%D0%B8%D1%82%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D1%86%D0%B5%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C+%22%D0%BD%D0%B0+100+%D0%B3%22&safe=off&lr=lang_ru%7Clang_en&hl=ru "HTTP/1.1 200 OK"
+2025-09-09 09:06:27,056 [INFO] healco-lite: Found 10 filtered URLs via optimized Google CSE
+2025-09-09 09:06:28,614 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:06:28,650 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/bombbar-proteinovye-pankeyki-bez-sahara-protein-pancake-molochnyy-krem-10sht-h-40g-251823824/
+2025-09-09 09:06:28,652 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:06:28,652 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:06:28,652 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:06:29,788 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:06:29,791 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:06:29,792 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:06:29,792 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:06:29,793 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/bombbar-proteinovye-pankeyki-bez-sahara-protein-pancake-molochnyy-krem-10sht-h-40g-251823824/
+2025-09-09 09:06:31,383 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/category/sportivnoe-pitanie-111000000/bombbar-87353927/review/
+2025-09-09 09:06:31,384 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:06:31,384 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:06:31,384 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:06:32,947 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:06:32,949 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:06:32,950 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:06:32,950 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:06:32,950 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/category/sportivnoe-pitanie-111000000/bombbar-87353927/review/
+2025-09-09 09:06:34,149 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/gotovye-proteinovye-pankeyki-bombbar-s-nachinkoy-molochnyy-krem-40g-po-10-bez-sahara-642995207/
+2025-09-09 09:06:34,149 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:06:34,149 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:06:34,150 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:06:35,775 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:06:35,778 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:06:35,778 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:06:35,778 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:06:35,779 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/gotovye-proteinovye-pankeyki-bombbar-s-nachinkoy-molochnyy-krem-40g-po-10-bez-sahara-642995207/
+2025-09-09 09:06:37,377 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/bombbar-proteinovaya-smes-bez-sahara-dlya-vypechki-pankeykov-i-blinov-tvorog-420gr-216966504/
+2025-09-09 09:06:37,378 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:06:37,378 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:06:37,378 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:06:38,800 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:06:38,897 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:06:38,900 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:06:38,900 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:06:38,900 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:06:38,901 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/bombbar-proteinovaya-smes-bez-sahara-dlya-vypechki-pankeykov-i-blinov-tvorog-420gr-216966504/
+2025-09-09 09:06:39,798 [INFO] healco-lite: Parsing HTML from: https://www.wildberries.ru/catalog/26426823/detail.aspx
+2025-09-09 09:06:39,799 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:06:39,799 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:06:39,799 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:06:41,878 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:06:41,880 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:06:41,880 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:06:41,880 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:06:41,880 [INFO] healco-lite: No nutrition data found on: https://www.wildberries.ru/catalog/26426823/detail.aspx
+2025-09-09 09:06:43,054 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/gotovye-proteinovye-pankeyki-bombbar-s-nachinkoy-bananovyy-krem-40g-po-10-shtuk-bez-sahara-476993444/
+2025-09-09 09:06:43,055 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:06:43,055 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:06:43,056 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:06:44,042 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:06:44,044 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:06:44,044 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:06:44,045 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:06:44,045 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/gotovye-proteinovye-pankeyki-bombbar-s-nachinkoy-bananovyy-krem-40g-po-10-shtuk-bez-sahara-476993444/
+2025-09-09 09:06:45,231 [INFO] healco-lite: Parsing HTML from: https://www.ozon.ru/product/proteinovye-pankeyki-bombbar-bez-sahara-assorti-vkusov-6-sht-gotovye-pankeyki-s-nachinkoy-524482680/
+2025-09-09 09:06:45,232 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:06:45,232 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:06:45,232 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:06:46,481 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:06:46,484 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:06:46,484 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:06:46,484 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:06:46,484 [INFO] healco-lite: No nutrition data found on: https://www.ozon.ru/product/proteinovye-pankeyki-bombbar-bez-sahara-assorti-vkusov-6-sht-gotovye-pankeyki-s-nachinkoy-524482680/
+2025-09-09 09:06:47,763 [INFO] healco-lite: Parsing HTML from: https://www.wildberries.ru/catalog/sport/sportivnoe-pitanie/tags/dimeksid-99-procentov
+2025-09-09 09:06:47,763 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:06:47,764 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:06:47,764 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:06:48,985 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:06:49,912 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:06:49,915 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:06:49,915 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:06:49,915 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:06:49,915 [INFO] healco-lite: No nutrition data found on: https://www.wildberries.ru/catalog/sport/sportivnoe-pitanie/tags/dimeksid-99-procentov
+2025-09-09 09:06:51,189 [INFO] healco-lite: Parsing HTML from: https://www.wildberries.ru/catalog/sport/sportivnoe-pitanie/tags/geiner-halal
+2025-09-09 09:06:51,190 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:06:51,190 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:06:51,190 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:06:52,232 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:06:52,235 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:06:52,235 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:06:52,236 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:06:52,236 [INFO] healco-lite: No nutrition data found on: https://www.wildberries.ru/catalog/sport/sportivnoe-pitanie/tags/geiner-halal
+2025-09-09 09:06:53,861 [INFO] healco-lite: Parsing HTML from: https://global.wildberries.ru/catalog/tags/kollagennl
+2025-09-09 09:06:53,864 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:06:53,864 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:06:53,864 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:06:54,789 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:06:54,791 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:06:54,791 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:06:54,792 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:06:57,277 [INFO] healco-lite: No nutrition data found on: https://global.wildberries.ru/catalog/tags/kollagennl
+2025-09-09 09:06:57,278 [INFO] healco-lite: Healco: trying Vision OCR on image search for: bombbar protein pancake
+2025-09-09 09:06:57,386 [WARNING] healco-lite: Google CSE images returned status 400
+2025-09-09 09:06:57,387 [INFO] healco-lite: Found 0 candidates before filtering
+2025-09-09 09:06:57,388 [INFO] healco-lite: After branded plausibility filter: 0 candidates
+2025-09-09 09:06:57,388 [INFO] healco-lite: No candidates passed plausibility filter, trying without filter
+2025-09-09 09:06:57,389 [INFO] healco-lite: No branded product found for: bombbar protein pancake 40г
+2025-09-09 09:06:57,390 [INFO] healco-lite: Searching USDA FDC for: 'bombbar protein pancake 40г'
+2025-09-09 09:06:59,170 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:06:59,539 [INFO] healco-lite: USDA extraction results: kcal=268.0, protein=6.08, fat=14.8, carbs=27.8
+2025-09-09 09:06:59,539 [INFO] healco-lite: Found USDA result: Potato pancakes with score 133
+2025-09-09 09:07:03,000 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:07:03,002 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:07:03,003 [INFO] healco-lite: Branded search: clean='Diablo шоколад без сахара', grams=None, ml=None
+2025-09-09 09:07:03,003 [INFO] healco-lite: Trying FatSecret API...
+2025-09-09 09:07:03,004 [INFO] healco-lite: Searching FatSecret by name: Diablo шоколад без сахара
+2025-09-09 09:07:03,900 [INFO] healco-lite: Google CSE branded search: 'Diablo шоколад без сахара' with nutrition terms
+2025-09-09 09:07:04,388 [INFO] httpx: HTTP Request: GET https://www.googleapis.com/customsearch/v1?key=AIzaSyC3e1UeIqzRi-01vJhbZKXE0ZhEgGpnph0&cx=e70ce979a44b54549&q=site%3Aozon.ru+OR+site%3Awildberries.ru+OR+site%3Avkusvill.ru+OR+site%3Aperekrestok.ru+OR+site%3Alenta.com+OR+site%3A5ka.ru+OR+site%3Ametro-cc.ru+OR+site%3Aauchan.ru+-inurl%3Aquestions+-inurl%3Areviews+-inurl%3Aotzyv+-inurl%3Aforum&num=10&exactTerms=Diablo+%D1%88%D0%BE%D0%BA%D0%BE%D0%BB%D0%B0%D0%B4+%D0%B1%D0%B5%D0%B7+%D1%81%D0%B0%D1%85%D0%B0%D1%80%D0%B0&orTerms=%D0%BA%D0%B0%D0%BB%D0%BE%D1%80%D0%B8%D0%B8%7C%D0%BF%D0%B8%D1%89%D0%B5%D0%B2%D0%B0%D1%8F+%D1%86%D0%B5%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C%7C%D0%9A%D0%91%D0%96%D0%A3%7Cnutrition+facts%7C%D0%BF%D0%B8%D1%82%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D1%86%D0%B5%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C+%22%D0%BD%D0%B0+100+%D0%B3%22&safe=off&lr=lang_ru%7Clang_en&hl=ru "HTTP/1.1 200 OK"
+2025-09-09 09:07:04,390 [INFO] healco-lite: Found 0 filtered URLs via optimized Google CSE
+2025-09-09 09:07:04,390 [INFO] healco-lite: Google CSE legacy search: 'Diablo шоколад без сахара калорийность КБЖУ калории белки жиры углеводы'
+2025-09-09 09:07:05,026 [INFO] healco-lite: Found 6 URLs via legacy Google CSE
+2025-09-09 09:07:09,358 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:07:10,098 [INFO] healco-lite: Parsing HTML from: https://amarant-almaty.kz/product/diablo-%D0%B4%D1%80%D0%B0%D0%B6%D0%B5-%D0%BA%D0%B0%D0%BF%D1%83%D1%87%D0%B8%D0%BD%D0%BE-%D1%81%D0%BE-%D1%81%D0%BB%D0%B8%D0%B2%D0%BA%D0%B0%D0%BC%D0%B8-%D1%83%D0%BF-18-%D1%88%D1%82/
+2025-09-09 09:07:10,114 [INFO] healco-lite: Regex extraction result: kcal=267.0, protein=0.2, fat=5.3, carbs=90.6
+2025-09-09 09:07:10,115 [INFO] healco-lite: Regex nutrition result: {'kcal_serv': 267.0, 'serving_g': 100, 'protein_serv': 0.2, 'fat_serv': 5.3, 'carb_serv': 90.6}
+2025-09-09 09:07:11,782 [INFO] healco-lite: Parsing HTML from: https://www.franklins.ru/%D0%9A%D0%91%D0%96%D0%A3.pdf
+2025-09-09 09:07:11,783 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:07:11,783 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:07:11,783 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:07:13,892 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 200 OK"
+2025-09-09 09:07:13,895 [INFO] healco-lite: LLM response received from gemini, model: gemini-1.5-flash
+2025-09-09 09:07:13,895 [INFO] healco-lite: LLM returned empty or invalid nutrition data
+2025-09-09 09:07:13,895 [INFO] healco-lite: GPT extraction failed or returned empty
+2025-09-09 09:07:15,294 [INFO] healco-lite: No nutrition data found on: https://www.franklins.ru/%D0%9A%D0%91%D0%96%D0%A3.pdf
+2025-09-09 09:07:19,003 [INFO] healco-lite: Parsing HTML from: https://amarant-almaty.kz/product/bite-%D0%BF%D0%B5%D1%87%D0%B5%D0%BD%D1%8C%D0%B5-%D1%81-%D0%B3%D0%BB%D0%B0%D0%B7%D1%83%D1%80%D1%8C%D1%8E-%D0%B0%D0%BF%D0%B5%D0%BB%D1%8C%D1%81%D0%B8%D0%BD-125-%D0%B3%D1%80/
+2025-09-09 09:07:19,019 [INFO] healco-lite: Regex extraction result: kcal=436.0, protein=3.4, fat=17.4, carbs=66.3
+2025-09-09 09:07:19,019 [INFO] healco-lite: Regex nutrition result: {'kcal_serv': 436.0, 'serving_g': 100, 'protein_serv': 3.4, 'fat_serv': 17.4, 'carb_serv': 66.3}
+2025-09-09 09:07:19,543 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:07:21,008 [INFO] healco-lite: Parsing HTML from: https://www.tomato-pizza.ru/files/products/calories.pdf
+2025-09-09 09:07:21,051 [INFO] healco-lite: No calories found in regex extraction
+2025-09-09 09:07:21,052 [INFO] healco-lite: Regex nutrition result: None
+2025-09-09 09:07:21,052 [INFO] healco-lite: Trying GPT extraction...
+2025-09-09 09:07:29,731 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:07:39,917 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"
+2025-09-09 09:07:50,103 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8202206367:AAEAaAtD5P07U-koJayzAg4tiS2_GgPzWEY/getUpdates "HTTP/1.1 200 OK"

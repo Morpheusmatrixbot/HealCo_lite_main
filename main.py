@@ -4874,6 +4874,7 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
                     return res
                 # привести к единому виду и досчитать «на порцию»
                 search_result = _scale_portion(dict(search_result), text)
+                search_result.setdefault('name', text)
 
                 source_map = {
                     'google_cse_jsonld': '🔎 Google (JSON-LD)',
@@ -4885,7 +4886,7 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
 
                 lines = [
                     f"✅ Найден продукт:",
-                    f"📦 {search_result.get('name') or '—'}",
+                    f"📦 {search_result['name']}",
                 ]
 
                 if search_result.get('brand'):

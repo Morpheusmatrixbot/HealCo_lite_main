@@ -15,6 +15,7 @@ import logging
 import random
 import requests
 import httpx
+import difflib
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
@@ -23,6 +24,7 @@ from requests_oauthlib import OAuth1
 from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
+from wger_api import fetch_exercises
 
 # ========= ЛОГИ =========
 logging.basicConfig(
@@ -5596,6 +5598,23 @@ async def generate_menu_via_llm(profile: Dict[str, Any], target_kcal: int, chang
         logger.error(f"Menu generation error: {e}")
         return f"Ошибка генерации меню: {e}"
 
+def validate_exercises(plan: str, allowed: List[Dict[str, str]]) -> str:
+    allowed_map = {e["name"].lower(): e["name"] for e in allowed}
+    pattern = re.compile(r"(?m)^\s*(?:\d+\.?|[-•])?\s*([А-ЯA-Za-zёЁ][А-Яа-яA-Za-zёЁ\s]{2,})")
+    lines = plan.splitlines()
+    for idx, line in enumerate(lines):
+        match = pattern.match(line)
+        if not match:
+            continue
+        name = match.group(1).strip()
+        low = name.lower()
+        if low not in allowed_map:
+            close = difflib.get_close_matches(low, allowed_map.keys(), n=1, cutoff=0.6)
+            if close:
+                repl = allowed_map[close[0]]
+                lines[idx] = line.replace(name, repl, 1)
+    return "\n".join(lines)
+
 async def generate_workout_via_llm(profile: Dict[str, Any], location: str, inventory: str, changes: str = "", days: int = 3) -> str:
     """Генерирует план тренировок через LLM"""
     if not client:
@@ -5605,6 +5624,13 @@ async def generate_workout_via_llm(profile: Dict[str, Any], location: str, inven
     injuries = profile.get("injuries", "нет")
     conditions = profile.get("conditions", "нет")
     preferences = changes or profile.get("preferences", {}).get("workout_notes", "")
+
+    exercises = await fetch_exercises(goal, inventory, injuries)
+    exercise_prompt = ""
+    if exercises:
+        exercise_prompt = "Доступные упражнения:\n" + "\n".join(
+            f"- {e['name']} (мышца: {e['muscle']}, уровень: {e['level']})" for e in exercises
+        ) + "\nИспользуйте только перечисленные упражнения."
     
     system_prompt = (
         "Вы сертифицированный персональный тренер по стандартам NASM. "
@@ -5627,6 +5653,7 @@ async def generate_workout_via_llm(profile: Dict[str, Any], location: str, inven
         f"Укажите конкретные упражнения, подходы×повторения, время отдыха.\n"
         f"ВАЖНО: НЕ используйте символы # (решетки).\n"
         f"ОБЯЗАТЕЛЬНО завершите: 'Итого за неделю: ~X ккал'"
+        + ("\n" + exercise_prompt if exercise_prompt else "")
     )
     
     try:
@@ -5637,7 +5664,10 @@ async def generate_workout_via_llm(profile: Dict[str, Any], location: str, inven
         
         # Убираем решетки
         result = result.replace("###", "").replace("##", "").replace("#", "")
-        
+
+        if exercises:
+            result = validate_exercises(result, exercises)
+
         # Проверяем есть ли итог за неделю
         if not re.search(r"Итого за неделю:.*?ккал", result):
             # Примерная оценка калорий за неделю

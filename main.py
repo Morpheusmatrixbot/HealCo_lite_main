@@ -4945,7 +4945,8 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
 # LLM client factory
 # =========================
 
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini").strip().lower()  # "openai" | "gemini"
+# По умолчанию используем OpenAI. Установите LLM_PROVIDER=gemini для Gemini API.
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai").strip().lower()  # "openai" | "gemini"
 GEMINI_API_KEY = get_secret("GEMINI_API_KEY", "")
 GEMINI_BASE_URL = os.getenv(
     "GEMINI_BASE_URL",

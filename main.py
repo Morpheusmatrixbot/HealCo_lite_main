@@ -1715,12 +1715,17 @@ def calculate_relevance_score(text: str, query: str) -> float:
         if len(word) >= 3 and word in text_lower:
             matches += 1
 
+    if matches == 0:
+        return 0.0
+
     # Вычисляем базовую релевантность
     relevance = matches / len(query_words)
 
     # Бонусы за наличие ключевых слов питательности
     nutrition_keywords = ['калори', 'ккал', 'белк', 'жир', 'углевод', 'protein', 'fat', 'carb', 'kcal', 'nutrition']
-    nutrition_bonus = sum(0.1 for keyword in nutrition_keywords if keyword in text_lower)
+    nutrition_bonus = 0.0
+    if relevance > 0:
+        nutrition_bonus = sum(0.05 for keyword in nutrition_keywords if keyword in text_lower)
 
     return min(1.0, relevance + nutrition_bonus)
 

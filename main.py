@@ -35,7 +35,6 @@ logging.basicConfig(
     handlers=[logging.FileHandler("bot.log", encoding="utf-8"), logging.StreamHandler()],
 )
 logger = logging.getLogger("healco-lite")
-
 # Импортируем Open Food Facts модуль
 try:
     from openfood import off_by_barcode, off_search_by_name, set_user_agent
@@ -1554,6 +1553,62 @@ async def _old_search_branded_product_via_google(
     logger.info(f"No branded product found for: {query_text}")
     return None
 
+RU_EN_DICT = {
+    "курица": "chicken",
+    "куриная грудка": "chicken breast",
+    "индейка": "turkey",
+    "говядина": "beef",
+    "свинина": "pork",
+    "лосось": "salmon",
+    "тунец": "tuna",
+    "булгур": "bulgur",
+    "гречка": "buckwheat",
+    "рис": "rice",
+    "овсянка": "oat",
+    "перловка": "barley",
+    "киноа": "quinoa",
+    "яблоко": "apple",
+    "картофель": "potato",
+    "яйцо": "egg",
+}
+
+EN_RU_DICT = {v: k for k, v in RU_EN_DICT.items()}
+
+def _translate_ru_to_en(text: str) -> str:
+    low = text.lower()
+    for ru, en in RU_EN_DICT.items():
+        if ru in low:
+            return en
+    return text
+
+def _translate_en_to_ru(text: str) -> str:
+    low = text.lower()
+    for en, ru in EN_RU_DICT.items():
+        if en in low:
+            return ru
+    return text
+
+async def translate_clean_query(clean_query: str) -> Tuple[str, str]:
+    """Получает английский и русский варианты запроса"""
+    en = clean_query
+    ru = clean_query
+    try:
+        norm = await call_llm_normalizer(clean_query)
+        if norm.get("base_en"):
+            en = norm["base_en"]
+    except Exception as e:
+        logger.warning(f"call_llm_normalizer failed: {e}")
+
+    if re.search(r"[A-Za-z]", clean_query) and not re.search(r"[А-Яа-я]", clean_query):
+        # исходный запрос на английском
+        ru = _translate_en_to_ru(en)
+    else:
+        ru = clean_query
+        if en == clean_query:
+            en = _translate_ru_to_en(clean_query)
+
+    return en, ru
+
 async def search_google_for_product(query: str) -> Optional[Dict[str, Any]]:
     """Улучшенный поиск продукта через Google CSE с поддержкой брендовых продуктов и Vision OCR"""
     if not GOOGLE_CSE_KEY or not GOOGLE_CSE_CX:
@@ -1564,7 +1619,7 @@ async def search_google_for_product(query: str) -> Optional[Dict[str, Any]]:
         # Сначала пробуем улучшенный брендовый поиск
         if is_branded_product(query):
             logger.info(f"Detected branded product: {query}")
-            result = search_branded_product_via_google(query)
+            result = await search_branded_product_via_google(query)
             if result:
                 logger.info(f"Found branded product: {result.get('name', 'Unknown')}")
                 return result
@@ -1584,12 +1639,20 @@ async def search_google_for_product(query: str) -> Optional[Dict[str, Any]]:
         if len(clean_query) < 2:
             return None
 
-        # Обычный поиск для натуральных продуктов
+        # Переводим запрос на оба языка
+        clean_en, clean_ru = await translate_clean_query(clean_query)
+
+        # Обычный поиск для натуральных продуктов на обоих языках
         search_variations = [
-            f"{clean_query} калорийность КБЖУ",
-            f"{clean_query} nutrition facts calories protein",
-            f"{clean_query} состав пищевая ценность",
+            f"{clean_ru} калорийность КБЖУ",
+            f"{clean_ru} состав пищевая ценность",
+            f"{clean_en} nutrition facts calories protein",
+            f"{clean_en} composition nutritional value",
         ]
+
+        # Удаляем дубликаты, сохраняя порядок
+        seen = set()
+        search_variations = [x for x in search_variations if not (x in seen or seen.add(x))]
 
         url = "https://www.googleapis.com/customsearch/v1"
 
@@ -1604,8 +1667,12 @@ async def search_google_for_product(query: str) -> Optional[Dict[str, Any]]:
             }
 
             def _make_request():
-                response = requests.get(url, params=params, timeout=15)
-                return response.json() if response.status_code == 200 else None
+                try:
+                    response = requests.get(url, params=params, timeout=15)
+                    return response.json() if response.status_code == 200 else None
+                except Exception as e:
+                    logger.debug(f"Request failed: {e}")
+                    return None
 
             data = await asyncio.to_thread(_make_request)
 

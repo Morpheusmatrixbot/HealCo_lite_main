@@ -1643,7 +1643,9 @@ async def search_google_for_product(query: str) -> Optional[Dict[str, Any]]:
         clean_en, clean_ru = await translate_clean_query(clean_query)
 
         # Обычный поиск для натуральных продуктов на обоих языках
-        search_variations = [
+        search_variations = [clean_query]
+        search_variations += [
+            f'"{clean_query}" калорийность',
             f"{clean_ru} калорийность КБЖУ",
             f"{clean_ru} состав пищевая ценность",
             f"{clean_en} nutrition facts calories protein",

@@ -1589,9 +1589,10 @@ def _translate_en_to_ru(text: str) -> str:
     return text
 
 async def translate_clean_query(clean_query: str) -> Tuple[str, str]:
-    """Получает английский и русский варианты запроса"""
+    """Возвращает английскую и русскую версии запроса."""
     en = clean_query
     ru = clean_query
+
     try:
         norm = await call_llm_normalizer(clean_query)
         if norm.get("base_en"):
@@ -1600,14 +1601,15 @@ async def translate_clean_query(clean_query: str) -> Tuple[str, str]:
         logger.warning(f"call_llm_normalizer failed: {e}")
 
     if re.search(r"[A-Za-z]", clean_query) and not re.search(r"[А-Яа-я]", clean_query):
-        # исходный запрос на английском
+        # исходный запрос на английском — переводим на русский
         ru = _translate_en_to_ru(en)
     else:
         ru = clean_query
         if en == clean_query:
             en = _translate_ru_to_en(clean_query)
 
-    return en, ru
+    # Возвращаем переводы, подставляя исходный запрос при неудаче
+    return (en or clean_query).strip(), (ru or clean_query).strip()
 
 async def search_google_for_product(query: str) -> Optional[Dict[str, Any]]:
     """Улучшенный поиск продукта через Google CSE с поддержкой брендовых продуктов и Vision OCR"""
@@ -1693,6 +1695,7 @@ async def search_google_for_product(query: str) -> Optional[Dict[str, Any]]:
 
                 nutrition_data = extract_nutrition_from_text(text_content.lower(), clean_query)
                 if nutrition_data and nutrition_data.get('kcal_100g', 0) > 0:
+                    nutrition_data.setdefault('name', clean_query)
                     logger.info(f"Found fallback result: {nutrition_data['name']}")
                     return nutrition_data
 
@@ -1723,11 +1726,9 @@ def calculate_relevance_score(text: str, query: str) -> float:
     # Вычисляем базовую релевантность
     relevance = matches / len(query_words)
 
-    # Бонусы за наличие ключевых слов питательности
+    # Небольшой бонус за наличие ключевых слов о питательности
     nutrition_keywords = ['калори', 'ккал', 'белк', 'жир', 'углевод', 'protein', 'fat', 'carb', 'kcal', 'nutrition']
-    nutrition_bonus = 0.0
-    if relevance > 0:
-        nutrition_bonus = sum(0.05 for keyword in nutrition_keywords if keyword in text_lower)
+    nutrition_bonus = 0.05 if any(keyword in text_lower for keyword in nutrition_keywords) else 0.0
 
     return min(1.0, relevance + nutrition_bonus)
 

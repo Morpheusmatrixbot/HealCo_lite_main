@@ -339,7 +339,44 @@ def get_typical_nutrition(product_name: str) -> Optional[Dict[str, Any]]:
             'carbs_100g': 7.0,
             'source': 'typical_values'
         }
-    
+
+    return None
+
+
+def _get_basic_product_fallback(clean_query: str, original_query: str) -> Optional[Dict[str, Any]]:
+    """Возвращает продукт из BASIC_PRODUCTS с установкой источника fallback."""
+    basic_products = globals().get('BASIC_PRODUCTS')
+    if not isinstance(basic_products, dict) or not basic_products:
+        return None
+
+    candidates: List[str] = []
+
+    def add_candidate(value: str) -> None:
+        if value and value not in candidates:
+            candidates.append(value)
+
+    for candidate in (clean_query, original_query):
+        if not candidate:
+            continue
+        normalized = re.sub(r'\s+', ' ', candidate.strip().lower())
+        if not normalized:
+            continue
+        add_candidate(normalized)
+        dashless = normalized.replace('-', ' ')
+        add_candidate(dashless)
+        no_yo = normalized.replace('ё', 'е')
+        add_candidate(no_yo)
+
+    for key in candidates:
+        product_data = basic_products.get(key)
+        if product_data and isinstance(product_data, dict):
+            result = dict(product_data)
+            if 'name' not in result:
+                fallback_name = original_query.strip() if isinstance(original_query, str) else ''
+                result['name'] = fallback_name or clean_query or key
+            result.setdefault('source', 'fallback')
+            return result
+
     return None
 
 def _guess_category(q: str) -> str | None:
@@ -4902,7 +4939,8 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
                     'google_cse_jsonld': '🔎 Google (JSON-LD)',
                     'google_cse_regex':  '🔎 Google (страница)',
                     'vision_ocr':        '🖼️ Google Vision OCR',
-                    'usda':              '🌿 USDA FDC'
+                    'usda':              '🌿 USDA FDC',
+                    'fallback':          '📦 Fallback'
                 }
                 source = source_map.get(search_result.get('source'), '🔎 Источник не указан')
 
@@ -5440,7 +5478,20 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
                 result = get_typical_nutrition(user_text)
                 if result:
                     logger.info(f"Found typical data: {result.get('name', 'Unknown')}")
-            
+
+            # 2a. Локальный словарь BASIC_PRODUCTS
+            if not result:
+                logger.info("Trying BASIC_PRODUCTS fallback dictionary...")
+                fallback_result = _get_basic_product_fallback(clean_query, user_text)
+                if not fallback_result and isinstance(route_info.get("queries"), list):
+                    for variant in route_info["queries"]:
+                        fallback_result = _get_basic_product_fallback(str(variant), user_text)
+                        if fallback_result:
+                            break
+                if fallback_result:
+                    result = fallback_result
+                    logger.info(f"Found in BASIC_PRODUCTS: {result.get('name', 'Unknown')}")
+
             # 2. Внешняя JSONL база
             if not result:
                 logger.info("Trying external JSONL database...")
@@ -5531,7 +5582,8 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
             'openfoodfacts':     '📦 Open Food Facts',
             'smart_search':      '🔍 Умный поиск',
             'fatsecret':         '🧩 FatSecret',
-            '🧩 FatSecret':      '🧩 FatSecret'
+            '🧩 FatSecret':      '🧩 FatSecret',
+            'fallback':          '📦 Fallback'
         }
         
         # Рассчитываем КБЖУ на пользовательскую порцию

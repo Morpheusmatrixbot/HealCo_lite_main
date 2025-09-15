@@ -71,6 +71,19 @@ MODEL_NAME = "gpt-4o-mini"
 # ========= ENV =========
 load_dotenv()
 
+# ========= FALLBACK NUTRITION DATA =========
+BASIC_PRODUCTS: Dict[str, Dict[str, Any]] = {
+    "apple": {"name": "Apple", "kcal_100g": 52, "source": "fallback"},
+    "banana": {"name": "Banana", "kcal_100g": 96, "source": "fallback"},
+    "chicken breast": {
+        "name": "Chicken Breast",
+        "kcal_100g": 165,
+        "source": "fallback",
+    },
+    "rice": {"name": "Rice", "kcal_100g": 130, "source": "fallback"},
+    "broccoli": {"name": "Broccoli", "kcal_100g": 34, "source": "fallback"},
+}
+
 # Функция для безопасного получения секретов из Replit Secrets
 def get_secret(key: str, default: str = "") -> str:
     """Получает секрет из Replit Secrets с fallback на переменные окружения"""

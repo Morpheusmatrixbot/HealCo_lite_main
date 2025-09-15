@@ -2398,23 +2398,51 @@ async def _fs_get_food(food_id: str) -> dict | None:
     return (data or {}).get("food")
 
 async def _fs_search_best(query: str) -> dict | None:
-    """Search by name → best food with metric serving."""
+    """Search by name → best food match based on similarity and serving info."""
     data = await _fs_request("foods.search", {"search_expression": query, "max_results": 10})
     foods = ((data or {}).get("foods") or {}).get("food") or []
     if isinstance(foods, dict):
         foods = [foods]
     if not foods:
         return None
-    def _score(fd):
-        s = ((fd.get("servings") or {}).get("serving")) or []
-        if isinstance(s, dict): s = [s]
+
+    def _metric_score(fd):
+        servings = ((fd.get("servings") or {}).get("serving")) or []
+        if isinstance(servings, dict):
+            servings = [servings]
         metr = 0
-        for it in s:
-            u = (it.get("metric_serving_unit") or it.get("serving_unit") or "").lower()
-            if u in ("g","ml"): metr += 1
+        for item in servings:
+            unit = (item.get("metric_serving_unit") or item.get("serving_unit") or "").lower()
+            if unit in ("g", "ml"):
+                metr += 1
         return (2 if fd.get("brand_name") else 0) + metr
-    best = max(foods, key=_score)
-    return await _fs_get_food(str(best.get("food_id")))
+
+    best_food: dict | None = None
+    best_similarity = 0.0
+    best_metric_score = -1
+    query_norm = (query or "").strip().lower()
+    for candidate in foods:
+        brand = (candidate.get("brand_name") or "").strip()
+        name = (candidate.get("food_name") or "").strip()
+        combined = " ".join(part for part in (brand, name) if part).lower()
+        if not combined:
+            continue
+        similarity = difflib.SequenceMatcher(None, query_norm, combined).ratio()
+        if similarity < 0.5:
+            continue
+        metric_score = _metric_score(candidate)
+        if (
+            similarity > best_similarity
+            or (similarity == best_similarity and metric_score > best_metric_score)
+        ):
+            best_food = candidate
+            best_similarity = similarity
+            best_metric_score = metric_score
+
+    if not best_food:
+        return None
+
+    return await _fs_get_food(str(best_food.get("food_id")))
 
 async def _fs_find_by_barcode(barcode: str) -> Optional[str]:
     """Find food ID by barcode (if available in FatSecret plan)"""

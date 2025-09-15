@@ -6209,8 +6209,7 @@ def start_keepalive_server():
 # ========= ЗАПУСК =========
 def main():
     if not BOT_TOKEN:
-        print("Ошибка: не задан TELEGRAM_BOT_TOKEN")
-        return
+        raise SystemExit("Ошибка: не задан TELEGRAM_BOT_TOKEN")
     if not TELEGRAM_PAYMENT_PROVIDER_TOKEN:
         print("Внимание: не задан TELEGRAM_PAYMENT_PROVIDER_TOKEN. Платёжные функции будут недоступны.")
 

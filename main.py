@@ -1375,9 +1375,15 @@ async def search_branded_product_via_google(
                     food = await _fs_get_food(fid)
                     res = _fs_norm(food, g, ml) if food else None
                     if res and (res.get('kcal_100g') is not None):
-                        logger.info(f"FatSecret barcode result: {res.get('name', 'Unknown')}")
-                        _cache_put(ck_fs_bar, res)
-                        return res
+                        matches, missing = _fs_query_tokens_match(res, clean or query_text)
+                        if matches:
+                            logger.info(f"FatSecret barcode result: {res.get('name', 'Unknown')}")
+                            _cache_put(ck_fs_bar, res)
+                            return res
+                        logger.info(
+                            "FatSecret barcode result discarded due to missing tokens: %s",
+                            ", ".join(missing),
+                        )
                 
             # 0b) поиск по названию/бренду
             logger.info(f"Searching FatSecret by name: {clean}")
@@ -1392,9 +1398,15 @@ async def search_branded_product_via_google(
                 logger.info(f"Found FatSecret food: {food.get('food_name', 'Unknown')}")
                 res = _fs_norm(food, g, ml)
                 if res and (res.get('kcal_100g') is not None):
-                    logger.info(f"FatSecret search result: {res.get('name', 'Unknown')}")
-                    _cache_put(ck_fs_q, res)
-                    return res
+                    matches, missing = _fs_query_tokens_match(res, clean or query_text)
+                    if matches:
+                        logger.info(f"FatSecret search result: {res.get('name', 'Unknown')}")
+                        _cache_put(ck_fs_q, res)
+                        return res
+                    logger.info(
+                        "FatSecret search result discarded due to missing tokens: %s",
+                        ", ".join(missing),
+                    )
                     
         except Exception as e:
             logger.warning(f"FatSecret search failed: {e}")
@@ -2392,6 +2404,22 @@ def _fs_norm(food: dict, grams: float | None, ml: float | None) -> dict | None:
         if f100   is not None:  out["fat_portion"]    = f100 * k
         if c100   is not None:  out["carbs_portion"]  = c100 * k
     return out
+
+def _fs_extract_query_tokens(query: str | None) -> list[str]:
+    if not query:
+        return []
+    normalized = query.casefold().replace("_", " ")
+    tokens = [tok for tok in re.findall(r"\w+", normalized) if tok and not tok.isdigit()]
+    return tokens
+
+def _fs_query_tokens_match(res: dict, query: str | None) -> tuple[bool, list[str]]:
+    tokens = _fs_extract_query_tokens(query)
+    if not tokens:
+        return True, []
+    brand = (res.get("brand") or "").casefold()
+    name = (res.get("name") or "").casefold()
+    missing = [tok for tok in tokens if tok not in brand and tok not in name]
+    return not missing, missing
 
 async def _fs_get_food(food_id: str) -> dict | None:
     data = await _fs_request("food.get.v2", {"food_id": food_id})
@@ -5454,20 +5482,42 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
                         if fid:
                             food = await _fs_get_food(fid)
                             if food:
-                                result = _fs_norm(food, user_grams, None)
-                                if result and result.get('kcal_100g'):
-                                    result['source'] = '🧩 FatSecret'
-                                    logger.info(f"Found FatSecret result by barcode: {result.get('name', 'Unknown')}")
-                    
+                                candidate = _fs_norm(food, user_grams, None)
+                                if candidate and candidate.get('kcal_100g'):
+                                    matches, missing = _fs_query_tokens_match(candidate, clean_query or user_text)
+                                    if matches:
+                                        candidate['source'] = '🧩 FatSecret'
+                                        result = candidate
+                                        logger.info(
+                                            "Found FatSecret result by barcode: %s",
+                                            result.get('name', 'Unknown'),
+                                        )
+                                    else:
+                                        logger.info(
+                                            "FatSecret barcode fallback discarded due to missing tokens: %s",
+                                            ", ".join(missing),
+                                        )
+
                     # Поиск по названию если штрих-код не сработал
                     if not result and clean_query:
                         logger.info(f"Searching FatSecret by name: {clean_query}")
                         food = await _fs_search_best(clean_query)
                         if food:
-                            result = _fs_norm(food, user_grams, None)
-                            if result and result.get('kcal_100g'):
-                                result['source'] = '🧩 FatSecret'
-                                logger.info(f"Found FatSecret result by name: {result.get('name', 'Unknown')}")
+                            candidate = _fs_norm(food, user_grams, None)
+                            if candidate and candidate.get('kcal_100g'):
+                                matches, missing = _fs_query_tokens_match(candidate, clean_query or user_text)
+                                if matches:
+                                    candidate['source'] = '🧩 FatSecret'
+                                    result = candidate
+                                    logger.info(
+                                        "Found FatSecret result by name: %s",
+                                        result.get('name', 'Unknown'),
+                                    )
+                                else:
+                                    logger.info(
+                                        "FatSecret name fallback discarded due to missing tokens: %s",
+                                        ", ".join(missing),
+                                    )
                                     
                 except Exception as e:
                     logger.warning(f"FatSecret fallback search failed: {e}")

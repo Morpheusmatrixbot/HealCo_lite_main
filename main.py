@@ -1386,8 +1386,15 @@ async def search_branded_product_via_google(
             if c:
                 logger.info(f"FatSecret cache hit by query {clean}")
                 return c
-                
-            food = await _fs_search_best(clean)
+
+            fs_query = clean
+            if re.search(r"[А-Яа-я]", clean):
+                fs_query = _translate_ru_to_en(clean)
+                logger.info(
+                    f"Translated Cyrillic query for FatSecret search: {fs_query}"
+                )
+
+            food = await _fs_search_best(fs_query)
             if food:
                 logger.info(f"Found FatSecret food: {food.get('food_name', 'Unknown')}")
                 res = _fs_norm(food, g, ml)

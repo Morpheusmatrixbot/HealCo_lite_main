@@ -2548,6 +2548,11 @@ async def _fs_search_best(query: str) -> dict | None:
         if similarity < 0.5:
             continue
         metric_score = _metric_score(candidate)
+        if similarity >= 0.9:
+            best_food = candidate
+            best_similarity = similarity
+            best_metric_score = metric_score
+            break
         if (
             similarity > best_similarity
             or (similarity == best_similarity and metric_score > best_metric_score)

@@ -1521,7 +1521,9 @@ async def search_branded_product_via_google(
     logger.info(f"Found {len(candidates)} candidates before filtering")
     
     # Для брендов используем мягкий фильтр
-    valid_candidates = [c for c in candidates if _plausible_branded(c)]
+    valid_candidates = [
+        c for c in candidates if _plausible_branded(c) and _hard_plausible(c, cat)
+    ]
     logger.info(f"After branded plausibility filter: {len(valid_candidates)} candidates")
     
     if not valid_candidates:
@@ -5351,7 +5353,17 @@ def _fix_portion_leak(res: dict) -> dict:
 
 # жесткий фильтр по правдоподобию для шоколада/батончиков и пр.
 def _hard_plausible(res: dict, cat: str | None) -> bool:
-    if not cat: 
+    has_macros = (
+        res.get("protein_100g")
+        or res.get("fat_100g")
+        or res.get("carbs_100g")
+        or res.get("protein_100ml")
+        or res.get("fat_100ml")
+        or res.get("carbs_100ml")
+    )
+    if not has_macros:
+        return False
+    if not cat:
         return True
     # шоколад с жиром < 10 г/100 г — почти точно мусор
     if cat == "chocolate" and (res.get("fat_100g") is not None) and (res["fat_100g"] < 10):
@@ -5360,10 +5372,7 @@ def _hard_plausible(res: dict, cat: str | None) -> bool:
 
 def _plausible_branded(d):
     """Мягкий фильтр для брендовых продуктов"""
-    return (d.get("kcal_100g") or d.get("kcal_100ml")) and (
-        d.get("protein_100g") or d.get("fat_100g") or d.get("carbs_100g") or
-        d.get("protein_100ml") or d.get("fat_100ml") or d.get("carbs_100ml")
-    )
+    return d.get("kcal_100g") or d.get("kcal_100ml")
 
 async def _gpt_extract_nutrition(text: str) -> Optional[dict]:
     """Fallback: извлекаем КБЖУ через LLM"""

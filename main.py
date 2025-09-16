@@ -2548,13 +2548,53 @@ def _fs_extract_query_tokens(query: str | None) -> list[str]:
     tokens = [tok for tok in re.findall(r"\w+", normalized) if tok and not tok.isdigit()]
     return tokens
 
+
+_LATIN_CHAR_RE = re.compile(r"[a-z]")
+_CYRILLIC_CHAR_RE = re.compile(r"[а-яё]")
+
+
+def _fs_token_script(token: str) -> str:
+    has_latin = bool(_LATIN_CHAR_RE.search(token))
+    has_cyrillic = bool(_CYRILLIC_CHAR_RE.search(token))
+    if has_latin and not has_cyrillic:
+        return "latin"
+    if has_cyrillic and not has_latin:
+        return "cyrillic"
+    if has_latin and has_cyrillic:
+        return "mixed"
+    return "other"
+
+
+def _fs_group_tokens_by_script(tokens: list[str]) -> dict[str, set[str]]:
+    grouped: dict[str, set[str]] = {}
+    for tok in tokens:
+        script = _fs_token_script(tok)
+        bucket = grouped.setdefault(script, set())
+        bucket.add(tok)
+    return grouped
+
 def _fs_query_tokens_match(res: dict, query: str | None) -> tuple[bool, list[str]]:
     tokens = _fs_extract_query_tokens(query)
     if not tokens:
         return True, []
     brand = (res.get("brand") or "").casefold()
     name = (res.get("name") or "").casefold()
-    missing = [tok for tok in tokens if tok not in brand and tok not in name]
+    haystack = " ".join(part for part in (brand, name) if part)
+    haystack_tokens = _fs_extract_query_tokens(haystack)
+    haystack_groups = _fs_group_tokens_by_script(haystack_tokens)
+
+    missing: list[str] = []
+    for tok in tokens:
+        script = _fs_token_script(tok)
+        bucket = haystack_groups.get(script)
+        if script == "mixed" and not bucket:
+            bucket = haystack_groups.get("latin")
+        if bucket:
+            if tok not in bucket:
+                missing.append(tok)
+        else:
+            if script in ("latin", "mixed"):
+                missing.append(tok)
     return not missing, missing
 
 async def _fs_get_food(food_id: str) -> dict | None:
@@ -2585,12 +2625,36 @@ async def _fs_search_best(query: str) -> dict | None:
     best_similarity = 0.0
     best_metric_score = -1
     query_norm = (query or "").strip().lower()
+    query_tokens = _fs_extract_query_tokens(query_norm)
+    query_scripts = [(tok, _fs_token_script(tok)) for tok in query_tokens]
+    latin_query_tokens = sum(1 for _, script in query_scripts if script in ("latin", "mixed"))
+    non_latin_query_tokens = len(query_scripts) - latin_query_tokens
     for candidate in foods:
         brand = (candidate.get("brand_name") or "").strip()
         name = (candidate.get("food_name") or "").strip()
         combined = " ".join(part for part in (brand, name) if part).lower()
         if not combined:
             continue
+        candidate_tokens = _fs_extract_query_tokens(combined)
+        if query_scripts and candidate_tokens:
+            candidate_groups = _fs_group_tokens_by_script(candidate_tokens)
+            considered = matched = 0
+            for tok, script in query_scripts:
+                bucket = candidate_groups.get(script)
+                if script == "mixed" and not bucket:
+                    bucket = candidate_groups.get("latin")
+                if not bucket:
+                    continue
+                considered += 1
+                if tok in bucket:
+                    matched += 1
+            if considered == 0:
+                if latin_query_tokens > non_latin_query_tokens:
+                    continue
+            else:
+                overlap_ratio = matched / considered
+                if matched == 0 or overlap_ratio < 0.5:
+                    continue
         similarity = difflib.SequenceMatcher(None, query_norm, combined).ratio()
         if similarity < 0.5:
             continue

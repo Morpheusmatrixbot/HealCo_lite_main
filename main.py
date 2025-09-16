@@ -1403,28 +1403,53 @@ async def search_branded_product_via_google(
                 logger.info(f"FatSecret cache hit by query {clean}")
                 return c
 
-            fs_query = clean
-            if re.search(r"[А-Яа-я]", clean):
-                fs_query = _translate_ru_to_en(clean)
+            clean_query = (clean or "").strip()
+            en_query = clean_query
+            if re.search(r"[А-Яа-я]", clean_query):
+                en_query = (_translate_ru_to_en(clean_query) or "").strip()
+                if en_query:
+                    logger.info(
+                        f"Translated Cyrillic query for FatSecret search: {en_query}"
+                    )
+
+            fs_queries: list[str] = []
+            for candidate in (clean_query, en_query):
+                candidate = (candidate or "").strip()
+                if candidate:
+                    fs_queries.append(candidate)
+
+            fs_queries = list(dict.fromkeys(fs_queries))
+
+            for fs_query in fs_queries:
+                if len(fs_query) < 3:
+                    logger.debug(
+                        "Skipping FatSecret search for short query: '%s'", fs_query
+                    )
+                    continue
+
+                food = await _fs_search_best(fs_query)
+                if not food:
+                    continue
+
                 logger.info(
-                    f"Translated Cyrillic query for FatSecret search: {fs_query}"
+                    f"Found FatSecret food: {food.get('food_name', 'Unknown')}"
+                )
+                res = _fs_norm(food, g, ml)
+                if not (res and (res.get('kcal_100g') is not None)):
+                    continue
+
+                matches, missing = _fs_query_tokens_match(res, clean or query_text)
+                if matches:
+                    logger.info(
+                        f"FatSecret search result: {res.get('name', 'Unknown')}"
+                    )
+                    _cache_put(ck_fs_q, res)
+                    return res
+                logger.info(
+                    "FatSecret search result discarded due to missing tokens: %s",
+                    ", ".join(missing),
                 )
 
-            food = await _fs_search_best(fs_query)
-            if food:
-                logger.info(f"Found FatSecret food: {food.get('food_name', 'Unknown')}")
-                res = _fs_norm(food, g, ml)
-                if res and (res.get('kcal_100g') is not None):
-                    matches, missing = _fs_query_tokens_match(res, clean or query_text)
-                    if matches:
-                        logger.info(f"FatSecret search result: {res.get('name', 'Unknown')}")
-                        _cache_put(ck_fs_q, res)
-                        return res
-                    logger.info(
-                        "FatSecret search result discarded due to missing tokens: %s",
-                        ", ".join(missing),
-                    )
-                    
         except Exception as e:
             logger.warning(f"FatSecret search failed: {e}")
     else:

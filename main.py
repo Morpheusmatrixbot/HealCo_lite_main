@@ -1236,7 +1236,12 @@ def _unify(n: dict, user_g: Optional[float], user_ml: Optional[float]) -> dict:
     kcal_s = n.get("kcal_serv")
     p_s = n.get("protein_serv")
     f_s = n.get("fat_serv")
-    c_s = n.get("carb_serv")
+    c_s = None
+    for _key in ("carb_serv", "carbs_serv"):
+        value = n.get(_key)
+        if value is not None:
+            c_s = value
+            break
     sg = n.get("serving_g")
     sml = n.get("serving_ml")
 
@@ -1286,7 +1291,12 @@ def _unify_and_scale(nut: Dict[str, Any], user_g: Optional[float], user_ml: Opti
     kcal_s = nut.get("kcal_serv")
     p_s = nut.get("protein_serv")
     f_s = nut.get("fat_serv")
-    c_s = nut.get("carb_serv")
+    c_s = None
+    for _key in ("carb_serv", "carbs_serv"):
+        value = nut.get(_key)
+        if value is not None:
+            c_s = value
+            break
     serv_g = nut.get("serving_g")
     serv_ml = nut.get("serving_ml")
     source = nut.get("source")

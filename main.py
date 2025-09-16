@@ -1669,6 +1669,28 @@ def _translate_en_to_ru(text: str) -> str:
             return ru
     return text
 
+async def _translate_ru_to_en_llm(text: str) -> str:
+    """Переводит текст с русского на английский через LLM с запасным вариантом."""
+    if not text:
+        return text
+
+    if not client:
+        return text
+
+    try:
+        response = await chat_llm(
+            [
+                {"role": "system", "content": "You translate Russian text to concise English."},
+                {"role": "user", "content": f"Переведи на английский и ответь только переводом: {text}"},
+            ],
+            temperature=0,
+        )
+        translation = response.strip()
+        return translation or text
+    except Exception as e:
+        logger.warning(f"LLM translation failed: {e}")
+        return text
+
 async def translate_clean_query(clean_query: str) -> Tuple[str, str]:
     """Возвращает английскую и русскую версии запроса."""
     en = clean_query

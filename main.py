@@ -1680,6 +1680,76 @@ async def translate_clean_query(clean_query: str) -> Tuple[str, str]:
     # Возвращаем переводы, подставляя исходный запрос при неудаче
     return (en or clean_query).strip(), (ru or clean_query).strip()
 
+
+def _strip_units_from_name(text: str) -> str:
+    """Удаляет из строки количества и единицы измерения для отображения названия."""
+    if not text:
+        return ""
+
+    cleaned = re.sub(
+        r"\b\d+(?:[.,]\d+)?\s*(?:кг|kg|г|гр|g|gram(?:s)?|grams?|мл|ml|литр(?:а|ов)?|l|шт|pcs|pieces?)\b",
+        " ",
+        text,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    return cleaned.strip(" ,;:-")
+
+
+def _has_cyrillic(text: str) -> bool:
+    return bool(re.search(r"[А-Яа-яЁё]", text)) if text else False
+
+
+def _has_latin(text: str) -> bool:
+    return bool(re.search(r"[A-Za-z]", text)) if text else False
+
+
+def build_display_name(result: Dict[str, Any], user_query: str, fallback: str = "") -> str:
+    """Формирует название продукта для отображения пользователю."""
+
+    def add_candidate(value: Optional[str], strip_units: bool = False) -> None:
+        if not value:
+            return
+        candidate = value.strip()
+        if not candidate:
+            return
+        if strip_units:
+            candidate = _strip_units_from_name(candidate)
+        candidate = re.sub(r"\s+", " ", candidate).strip(" ,;:-")
+        if not candidate:
+            return
+        key = candidate.casefold()
+        if key not in seen:
+            seen.add(key)
+            candidates.append(candidate)
+
+    candidates: List[str] = []
+    seen: set[str] = set()
+
+    add_candidate(result.get("name"))
+    for key in ("display_name", "name_ru", "ru_name", "name_localized", "localized_name"):
+        add_candidate(result.get(key))
+
+    add_candidate(fallback, strip_units=True)
+    add_candidate(user_query, strip_units=True)
+
+    if not candidates:
+        return (user_query or fallback).strip()
+
+    localized = next((c for c in candidates if _has_cyrillic(c)), "")
+    english = next((c for c in candidates if _has_latin(c)), "")
+
+    if localized:
+        if english and localized.casefold() != english.casefold():
+            return f"{localized} ({english})"
+        return localized
+
+    if english:
+        return english
+
+    return candidates[0]
+
+
 async def search_google_for_product(query: str) -> Optional[Dict[str, Any]]:
     """Улучшенный поиск продукта через Google CSE с поддержкой брендовых продуктов и Vision OCR"""
     if not GOOGLE_CSE_KEY or not GOOGLE_CSE_CX:
@@ -4998,6 +5068,9 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
                 search_result = _scale_portion(dict(search_result), text)
                 search_result.setdefault('name', text)
 
+                name_display = build_display_name(search_result, text)
+                search_result['name'] = name_display
+
                 source_map = {
                     'google_cse_jsonld': '🔎 Google (JSON-LD)',
                     'google_cse_regex':  '🔎 Google (страница)',
@@ -5656,7 +5729,9 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
         
         # Нормализация энергий (фиксируем kJ и «733 ккал/100 г»)
         result = normalize_result(result)
-        
+        name_display = build_display_name(result, user_text, fallback=clean_query)
+        result['name'] = name_display
+
         # Обновляем маппинг источников
         source_map = {
             'google_cse_jsonld': '🔎 Google (JSON-LD)',
@@ -5694,8 +5769,8 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
                 else:
                     source_display = '🔍 Умный поиск'
             
-            notes = f"{source_display}: {result.get('name', clean_query)} ({user_grams}г)"
-            
+            notes = f"{source_display}: {name_display} ({user_grams}г)"
+
             return {
                 'kcal': int(result.get('kcal_100g', 0) * factor),
                 'protein_g': round(result.get('protein_100g', 0) * factor, 1),
@@ -5729,7 +5804,7 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
                 else:
                     source_display = '🔍 Умный поиск'
             
-            notes = f"{source_display}: {result.get('name', clean_query)} (100г)"
+            notes = f"{source_display}: {name_display} (100г)"
             
             return {
                 'kcal': int(result.get('kcal_100g', 0)),

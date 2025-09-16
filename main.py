@@ -2516,12 +2516,7 @@ async def _fs_get_food(food_id: str) -> dict | None:
 
 async def _fs_search_best(query: str) -> dict | None:
     """Search by name → best food match based on similarity and serving info."""
-    data = await _fs_request("foods.search", {"search_expression": query, "max_results": 10})
-    foods = ((data or {}).get("foods") or {}).get("food") or []
-    if isinstance(foods, dict):
-        foods = [foods]
-    if not foods:
-        return None
+    max_pages = 5
 
     def _metric_score(fd):
         servings = ((fd.get("servings") or {}).get("serving")) or []
@@ -2538,23 +2533,46 @@ async def _fs_search_best(query: str) -> dict | None:
     best_similarity = 0.0
     best_metric_score = -1
     query_norm = (query or "").strip().lower()
-    for candidate in foods:
-        brand = (candidate.get("brand_name") or "").strip()
-        name = (candidate.get("food_name") or "").strip()
-        combined = " ".join(part for part in (brand, name) if part).lower()
-        if not combined:
+    for page in range(max_pages):
+        try:
+            data = await _fs_request(
+                "foods.search",
+                {
+                    "search_expression": query,
+                    "max_results": 10,
+                    "page_number": page,
+                },
+            )
+        except Exception as exc:
+            logger.warning(f"FatSecret foods.search failed on page {page}: {exc}")
             continue
-        similarity = difflib.SequenceMatcher(None, query_norm, combined).ratio()
-        if similarity < 0.5:
-            continue
-        metric_score = _metric_score(candidate)
-        if (
-            similarity > best_similarity
-            or (similarity == best_similarity and metric_score > best_metric_score)
-        ):
-            best_food = candidate
-            best_similarity = similarity
-            best_metric_score = metric_score
+
+        foods = ((data or {}).get("foods") or {}).get("food") or []
+        if isinstance(foods, dict):
+            foods = [foods]
+        if not foods:
+            break
+
+        for candidate in foods:
+            brand = (candidate.get("brand_name") or "").strip()
+            name = (candidate.get("food_name") or "").strip()
+            combined = " ".join(part for part in (brand, name) if part).lower()
+            if not combined:
+                continue
+            similarity = difflib.SequenceMatcher(None, query_norm, combined).ratio()
+            if similarity < 0.5:
+                continue
+            metric_score = _metric_score(candidate)
+            if (
+                similarity > best_similarity
+                or (similarity == best_similarity and metric_score > best_metric_score)
+            ):
+                best_food = candidate
+                best_similarity = similarity
+                best_metric_score = metric_score
+
+        if best_similarity >= 0.9:
+            break
 
     if not best_food:
         return None

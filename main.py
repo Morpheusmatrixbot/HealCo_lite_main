@@ -2573,6 +2573,136 @@ def _fs_group_tokens_by_script(tokens: list[str]) -> dict[str, set[str]]:
         bucket.add(tok)
     return grouped
 
+
+_FS_TRANSLIT_MAP: Dict[str, str] = {
+    "а": "a",
+    "б": "b",
+    "в": "v",
+    "г": "g",
+    "д": "d",
+    "е": "e",
+    "ё": "e",
+    "ж": "zh",
+    "з": "z",
+    "и": "i",
+    "й": "y",
+    "к": "k",
+    "л": "l",
+    "м": "m",
+    "н": "n",
+    "о": "o",
+    "п": "p",
+    "р": "r",
+    "с": "s",
+    "т": "t",
+    "у": "u",
+    "ф": "f",
+    "х": "h",
+    "ц": "ts",
+    "ч": "ch",
+    "ш": "sh",
+    "щ": "sch",
+    "ъ": "",
+    "ы": "y",
+    "ь": "",
+    "э": "e",
+    "ю": "yu",
+    "я": "ya",
+}
+
+
+_FS_TOKEN_SYNONYMS: Dict[str, set[str]] = {
+    "батон": {"bar"},
+    "батончик": {"bar", "bars"},
+    "батонч": {"bar", "bars"},
+    "батончика": {"bar", "bars"},
+    "батончике": {"bar", "bars"},
+    "батончики": {"bars", "bar"},
+    "батончиков": {"bars"},
+    "батончиків": {"bars"},
+    "протеиновый": {"protein", "proteinbar", "protein_bar"},
+    "протеиновая": {"protein"},
+    "протеиновое": {"protein"},
+    "протеин": {"protein"},
+    "протеина": {"protein"},
+    "протеиновыйбатончик": {"protein", "bar"},
+    "спортивный": {"sport"},
+    "спорт": {"sport"},
+    "энергетический": {"energy", "energybar"},
+    "энергетика": {"energy"},
+    "энергия": {"energy"},
+    "энергетическийбатончик": {"energy", "bar"},
+    "бомббар": {"bombbar"},
+    "бомббаров": {"bombbar"},
+    "бомбар": {"bombbar"},
+    "бонббар": {"bombbar"},
+    "бомбарр": {"bombbar"},
+    "бомбарчик": {"bombbar"},
+    "bombbar": {"bombbar"},
+    "бомбарбар": {"bombbar"},
+    "батончикиbombbar": {"bombbar"},
+}
+
+
+_FS_GENERIC_TOKENS: set[str] = {
+    "bar",
+    "bars",
+    "protein",
+    "proteinbar",
+    "protein_bar",
+    "sport",
+    "energy",
+    "energybar",
+    "energy_bar",
+    "батон",
+    "батончик",
+    "батонч",
+    "батончика",
+    "батончике",
+    "батончики",
+    "батончиков",
+    "протеиновый",
+    "протеиновая",
+    "протеиновое",
+    "протеиновые",
+    "протеин",
+    "протеина",
+    "спорт",
+    "спортивный",
+    "энергетический",
+    "энергетика",
+    "энергия",
+}
+
+
+def _fs_transliterate(token: str) -> str:
+    result = []
+    for ch in token:
+        mapped = _FS_TRANSLIT_MAP.get(ch, ch)
+        result.append(mapped)
+    translit = "".join(result)
+    translit = re.sub(r"[^a-z0-9]+", "", translit)
+    return translit
+
+
+def _fs_token_synonyms(token: str) -> set[str]:
+    tok = token.casefold()
+    synonyms: set[str] = {tok}
+    mapped = _FS_TOKEN_SYNONYMS.get(tok)
+    if mapped:
+        synonyms.update(mapped)
+    script = _fs_token_script(tok)
+    if script == "cyrillic":
+        translit = _fs_transliterate(tok)
+        if translit and translit != tok:
+            synonyms.add(translit)
+    if script in ("latin", "mixed") and len(tok) > 3:
+        if tok.endswith("s"):
+            synonyms.add(tok.rstrip("s"))
+        else:
+            synonyms.add(f"{tok}s")
+    return {s for s in synonyms if s}
+
 def _fs_query_tokens_match(res: dict, query: str | None) -> tuple[bool, list[str]]:
     tokens = _fs_extract_query_tokens(query)
     if not tokens:
@@ -2583,18 +2713,27 @@ def _fs_query_tokens_match(res: dict, query: str | None) -> tuple[bool, list[str
     haystack_tokens = _fs_extract_query_tokens(haystack)
     haystack_groups = _fs_group_tokens_by_script(haystack_tokens)
 
+    haystack_set = set(haystack_tokens)
     missing: list[str] = []
     for tok in tokens:
+        synonyms = _fs_token_synonyms(tok)
+        if not synonyms:
+            continue
         script = _fs_token_script(tok)
         bucket = haystack_groups.get(script)
         if script == "mixed" and not bucket:
             bucket = haystack_groups.get("latin")
-        if bucket:
-            if tok not in bucket:
-                missing.append(tok)
-        else:
-            if script in ("latin", "mixed"):
-                missing.append(tok)
+        matched = False
+        if bucket and synonyms & bucket:
+            matched = True
+        elif script == "cyrillic":
+            latin_bucket = haystack_groups.get("latin")
+            if latin_bucket and synonyms & latin_bucket:
+                matched = True
+        if not matched and synonyms & haystack_set:
+            matched = True
+        if not matched:
+            missing.append(tok)
     return not missing, missing
 
 async def _fs_get_food(food_id: str) -> dict | None:
@@ -2627,8 +2766,10 @@ async def _fs_search_best(query: str) -> dict | None:
     query_norm = (query or "").strip().lower()
     query_tokens = _fs_extract_query_tokens(query_norm)
     query_scripts = [(tok, _fs_token_script(tok)) for tok in query_tokens]
+    essential_query_tokens = [
+        tok for tok, _ in query_scripts if tok not in _FS_GENERIC_TOKENS
+    ]
     latin_query_tokens = sum(1 for _, script in query_scripts if script in ("latin", "mixed"))
-    non_latin_query_tokens = len(query_scripts) - latin_query_tokens
     has_cyrillic_tokens = any(script == "cyrillic" for _, script in query_scripts)
     bilingual_query = bool(has_cyrillic_tokens and latin_query_tokens)
     latin_only_query = " ".join(
@@ -2643,23 +2784,47 @@ async def _fs_search_best(query: str) -> dict | None:
         candidate_tokens = _fs_extract_query_tokens(combined)
         if query_scripts and candidate_tokens:
             candidate_groups = _fs_group_tokens_by_script(candidate_tokens)
+            candidate_token_set = set(candidate_tokens)
             considered = matched = 0
+            essential_matched = 0
             for tok, script in query_scripts:
+                synonyms = _fs_token_synonyms(tok)
+                if not synonyms:
+                    continue
                 bucket = candidate_groups.get(script)
                 if script == "mixed" and not bucket:
                     bucket = candidate_groups.get("latin")
-                if not bucket:
-                    continue
+                buckets_to_check: list[set[str]] = []
+                if bucket:
+                    buckets_to_check.append(bucket)
+                if script == "cyrillic":
+                    latin_bucket = candidate_groups.get("latin")
+                    if latin_bucket and latin_bucket not in buckets_to_check:
+                        buckets_to_check.append(latin_bucket)
+                if not buckets_to_check:
+                    buckets_to_check.append(candidate_token_set)
+
+                matched_synonyms: set[str] = set()
+                for bucket_tokens in buckets_to_check:
+                    intersection = synonyms & bucket_tokens
+                    if intersection:
+                        matched_synonyms = intersection
+                        break
+
                 considered += 1
-                if tok in bucket:
+                if matched_synonyms:
                     matched += 1
+                    if any(syn not in _FS_GENERIC_TOKENS for syn in matched_synonyms):
+                        essential_matched += 1
+
             if considered == 0:
-                if latin_query_tokens > non_latin_query_tokens:
-                    continue
-            else:
-                overlap_ratio = matched / considered
-                if matched == 0 or overlap_ratio < 0.5:
-                    continue
+                continue
+
+            overlap_ratio = matched / considered
+            if matched == 0 or overlap_ratio < 0.5:
+                continue
+            if essential_query_tokens and essential_matched == 0:
+                continue
         similarity = difflib.SequenceMatcher(None, query_norm, combined).ratio()
         effective_similarity = similarity
         threshold = 0.5

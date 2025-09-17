@@ -32,7 +32,7 @@ Key packages include:
 ```
 export OPENAI_API_KEY=your_openai_key
 export LLM_PROVIDER=openai  # optional, defaults to openai; set to gemini to use Gemini
-export MODEL_NAME=gpt-5-mini  # optional, defaults to gpt-5-mini
+export MODEL_NAME=gpt-4  # optional, defaults to gpt-4
 export TELEGRAM_BOT_TOKEN=your_bot_token  # required
 export TELEGRAM_PAYMENT_PROVIDER_TOKEN=your_payment_token
 export DEVELOPER_USER_ID=123456789
@@ -50,7 +50,7 @@ export GEMINI_API_KEY=...  # required if LLM_PROVIDER=gemini
 
 `TELEGRAM_BOT_TOKEN` is mandatory — the application will exit immediately if it is not set.
 
-OpenAI is used by default with the `gpt-5-mini` model. Set `LLM_PROVIDER=gemini` and provide `GEMINI_API_KEY`
+OpenAI is used by default with the `gpt-4` model. Set `LLM_PROVIDER=gemini` and provide `GEMINI_API_KEY`
 if you want to use the Gemini-compatible API instead.
 
 3. Run the bot:

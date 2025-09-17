@@ -1931,6 +1931,8 @@ async def search_google_for_product(
                         if amount is None or amount <= 0:
                             return False
 
+                        result[portion_key] = amount
+
                         base_kcal = result.get(f'kcal_{base_suffix}')
                         base_protein = result.get(f'protein_{base_suffix}')
                         base_fat = result.get(f'fat_{base_suffix}')
@@ -1944,21 +1946,23 @@ async def search_google_for_product(
                         ):
                             return False
 
-                        if not result.get(portion_key):
-                            result[portion_key] = amount
-
                         factor = amount / 100.0
+
+                        macros_written = False
 
                         if base_kcal is not None:
                             result['kcal_portion'] = base_kcal * factor
+                            macros_written = True
                         if base_protein is not None:
                             result['protein_portion'] = base_protein * factor
+                            macros_written = True
                         if base_fat is not None:
                             result['fat_portion'] = base_fat * factor
+                            macros_written = True
                         if base_carbs is not None:
                             result['carbs_portion'] = base_carbs * factor
 
-                        return True
+                        return macros_written
 
                     applied = _apply_portion_values(
                         nutrition_data,

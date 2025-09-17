@@ -1574,7 +1574,7 @@ async def search_branded_product_via_google(
         # Попробуем более общий поиск как fallback
         if re.search(r'\b\d{8,14}\b', query_text):
             logger.info("Trying fallback search for barcode-like query")
-            fallback_result = await search_google_for_product(query_text)
+            fallback_result = await search_google_for_product(query_text, g=g, ml=ml)
             if fallback_result:
                 _cache_put(ck, fallback_result)
                 return fallback_result
@@ -1812,7 +1812,11 @@ def build_display_name(result: Dict[str, Any], user_query: str, fallback: str = 
     return candidates[0]
 
 
-async def search_google_for_product(query: str) -> Optional[Dict[str, Any]]:
+async def search_google_for_product(
+    query: str,
+    g: Optional[float] = None,
+    ml: Optional[float] = None,
+) -> Optional[Dict[str, Any]]:
     """Улучшенный поиск продукта через Google CSE с поддержкой брендовых продуктов и Vision OCR"""
     if not GOOGLE_CSE_KEY or not GOOGLE_CSE_CX:
         logger.warning("Google API credentials not configured")
@@ -1828,16 +1832,35 @@ async def search_google_for_product(query: str) -> Optional[Dict[str, Any]]:
                 return result
 
         # Fallback к обычному поиску для натуральных продуктов
-        original_grams = 100
-        grams_pattern = r'(\d{1,4})\s*(?:г|гр|гр\.|g|gr|gram|grams|грамм|граммов)\b'
+        portion_grams = _to_float_or_none(g)
+        portion_ml = _to_float_or_none(ml)
+
+        grams_pattern = r'(\d{1,4}(?:[.,]\d{1,2})?)\s*(?:г|гр|g|gr|gram|grams|грамм|граммов)(?:\.|\b)'
         grams_match = re.search(grams_pattern, query, re.IGNORECASE)
-        if grams_match:
-            original_grams = int(grams_match.group(1))
+        if portion_grams is None and grams_match:
+            portion_grams = _to_float_or_none(grams_match.group(1))
+
+        ml_pattern = r'(\d{1,4}(?:[.,]\d{1,2})?)\s*((?:мл|ml|milliliter(?:s)?|миллилитр(?:а|ов)?|л|l|литр(?:а|ов)?|liter(?:s)?))(?:\.|\b)'
+        ml_match = re.search(ml_pattern, query, re.IGNORECASE)
+        if portion_ml is None and ml_match:
+            ml_value = _to_float_or_none(ml_match.group(1))
+            if ml_value is not None:
+                unit = ml_match.group(2).lower().rstrip('.')
+                if unit in {'л', 'l'} or unit.startswith('литр') or unit.startswith('liter'):
+                    ml_value *= 1000
+                portion_ml = ml_value
 
         clean_query = re.sub(grams_pattern, '', query, flags=re.IGNORECASE)
+        clean_query = re.sub(ml_pattern, '', clean_query, flags=re.IGNORECASE)
         clean_query = ' '.join(clean_query.split()).strip()
 
-        logger.info(f"Google fallback search: original='{query}' | grams={original_grams} | clean='{clean_query}'")
+        logger.info(
+            "Google fallback search: original='%s' | grams=%s | ml=%s | clean='%s'",
+            query,
+            portion_grams,
+            portion_ml,
+            clean_query,
+        )
 
         if len(clean_query) < 2:
             return None
@@ -1897,6 +1920,61 @@ async def search_google_for_product(query: str) -> Optional[Dict[str, Any]]:
                 nutrition_data = extract_nutrition_from_text(text_content.lower(), clean_query)
                 if nutrition_data and nutrition_data.get('kcal_100g', 0) > 0:
                     nutrition_data.setdefault('name', clean_query)
+                    nutrition_data.setdefault('source', 'fallback')
+
+                    def _apply_portion_values(
+                        result: Dict[str, Any],
+                        amount: Optional[float],
+                        base_suffix: str,
+                        portion_key: str,
+                    ) -> bool:
+                        if amount is None or amount <= 0:
+                            return False
+
+                        base_kcal = result.get(f'kcal_{base_suffix}')
+                        base_protein = result.get(f'protein_{base_suffix}')
+                        base_fat = result.get(f'fat_{base_suffix}')
+                        base_carbs = result.get(f'carbs_{base_suffix}')
+
+                        if (
+                            base_kcal is None
+                            and base_protein is None
+                            and base_fat is None
+                            and base_carbs is None
+                        ):
+                            return False
+
+                        if not result.get(portion_key):
+                            result[portion_key] = amount
+
+                        factor = amount / 100.0
+
+                        if base_kcal is not None:
+                            result['kcal_portion'] = base_kcal * factor
+                        if base_protein is not None:
+                            result['protein_portion'] = base_protein * factor
+                        if base_fat is not None:
+                            result['fat_portion'] = base_fat * factor
+                        if base_carbs is not None:
+                            result['carbs_portion'] = base_carbs * factor
+
+                        return True
+
+                    applied = _apply_portion_values(
+                        nutrition_data,
+                        portion_grams,
+                        '100g',
+                        'portion_g',
+                    )
+
+                    if not applied:
+                        _apply_portion_values(
+                            nutrition_data,
+                            portion_ml,
+                            '100ml',
+                            'portion_ml',
+                        )
+
                     logger.info(f"Found fallback result: {nutrition_data['name']}")
                     return nutrition_data
 
@@ -5852,11 +5930,32 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
         def extract_portion_grams(text: str) -> Optional[float]:
             m = re.search(r'(\d+(?:[.,]\d+)?)\s*(?:г|гр|g|grams?)\b', text, re.I)
             return float(m.group(1).replace(',', '.')) if m else None
-        
-        user_grams = extract_portion_grams(user_text)
-        logger.info(f"User grams: {user_grams}")
 
-        clean_query = re.sub(r'\d+\s*(?:г|гр|g|grams?)', '', user_text, flags=re.IGNORECASE).strip() or user_text
+        def extract_portion_ml(text: str) -> Optional[float]:
+            m = re.search(
+                r'(\d+(?:[.,]\d+)?)\s*(мл|ml|milliliter(?:s)?|миллилитр(?:а|ов)?|л|l|литр(?:а|ов)?|liter(?:s)?)\b',
+                text,
+                re.I,
+            )
+            if not m:
+                return None
+            value = float(m.group(1).replace(',', '.'))
+            unit = m.group(2).lower()
+            if unit in {'л', 'l'} or unit.startswith('литр') or unit.startswith('liter'):
+                value *= 1000
+            return value
+
+        user_grams = extract_portion_grams(user_text)
+        user_ml = extract_portion_ml(user_text)
+        logger.info(f"User grams: {user_grams}")
+        logger.info(f"User ml: {user_ml}")
+
+        clean_query = re.sub(
+            r'\d+\s*(?:г|гр|g|grams?|мл|ml|milliliter(?:s)?|л|l|литр(?:а|ов)?|liter(?:s)?)',
+            '',
+            user_text,
+            flags=re.IGNORECASE,
+        ).strip() or user_text
         logger.info(f"Clean query: {clean_query}")
         
         # Выбираем стратегию поиска на основе маршрута
@@ -5875,7 +5974,7 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
             # Fallback: попробуем обычный Google поиск для брендовых продуктов
             if not result:
                 logger.info("No branded result found, trying Google search fallback")
-                result = await search_google_for_product(user_text)
+                result = await search_google_for_product(user_text, g=user_grams, ml=user_ml)
                 if result:
                     logger.info(f"Found via Google search fallback: {result.get('name', 'Unknown')}")
                     result['source'] = 'smart_search'
@@ -6032,7 +6131,7 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
             if not result:
                 logger.info("Trying Google search fallback...")
                 try:
-                    result = await search_google_for_product(user_text)
+                    result = await search_google_for_product(user_text, g=user_grams, ml=user_ml)
                     if result:
                         logger.info(f"Found via Google search: {result.get('name', 'Unknown')}")
                     else:

@@ -2629,6 +2629,11 @@ async def _fs_search_best(query: str) -> dict | None:
     query_scripts = [(tok, _fs_token_script(tok)) for tok in query_tokens]
     latin_query_tokens = sum(1 for _, script in query_scripts if script in ("latin", "mixed"))
     non_latin_query_tokens = len(query_scripts) - latin_query_tokens
+    has_cyrillic_tokens = any(script == "cyrillic" for _, script in query_scripts)
+    bilingual_query = bool(has_cyrillic_tokens and latin_query_tokens)
+    latin_only_query = " ".join(
+        tok for tok, script in query_scripts if script in ("latin", "mixed")
+    )
     for candidate in foods:
         brand = (candidate.get("brand_name") or "").strip()
         name = (candidate.get("food_name") or "").strip()
@@ -2656,20 +2661,29 @@ async def _fs_search_best(query: str) -> dict | None:
                 if matched == 0 or overlap_ratio < 0.5:
                     continue
         similarity = difflib.SequenceMatcher(None, query_norm, combined).ratio()
-        if similarity < 0.5:
+        effective_similarity = similarity
+        threshold = 0.5
+        if bilingual_query and latin_only_query:
+            latin_similarity = difflib.SequenceMatcher(None, latin_only_query, combined).ratio()
+            effective_similarity = max(effective_similarity, latin_similarity)
+            threshold = 0.35
+        if effective_similarity < threshold:
             continue
         metric_score = _metric_score(candidate)
-        if similarity >= 0.9:
+        if effective_similarity >= 0.9:
             best_food = candidate
-            best_similarity = similarity
+            best_similarity = effective_similarity
             best_metric_score = metric_score
             break
         if (
-            similarity > best_similarity
-            or (similarity == best_similarity and metric_score > best_metric_score)
+            effective_similarity > best_similarity
+            or (
+                effective_similarity == best_similarity
+                and metric_score > best_metric_score
+            )
         ):
             best_food = candidate
-            best_similarity = similarity
+            best_similarity = effective_similarity
             best_metric_score = metric_score
 
     if not best_food:

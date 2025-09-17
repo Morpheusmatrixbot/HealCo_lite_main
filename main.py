@@ -66,6 +66,7 @@ from telegram.ext import (
 
 VERSION = "healco lite v1.2"
 PROJECT_NAME = "Healco Lite v1.2"
+# Default OpenAI chat model to use when MODEL_NAME is not set
 MODEL_NAME_DEFAULT = "gpt-5-mini"
 
 # ========= ENV =========

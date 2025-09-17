@@ -66,10 +66,12 @@ from telegram.ext import (
 
 VERSION = "healco lite v1.2"
 PROJECT_NAME = "Healco Lite v1.2"
-MODEL_NAME = "gpt-4o-mini"
+MODEL_NAME_DEFAULT = "gpt-5-mini"
 
 # ========= ENV =========
 load_dotenv()
+
+MODEL_NAME = os.environ.get("MODEL_NAME", MODEL_NAME_DEFAULT)
 
 # ========= FALLBACK NUTRITION DATA =========
 BASIC_PRODUCTS: Dict[str, Dict[str, Any]] = {

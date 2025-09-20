@@ -16,6 +16,7 @@ import random
 import requests
 import httpx
 import difflib
+import traceback
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple

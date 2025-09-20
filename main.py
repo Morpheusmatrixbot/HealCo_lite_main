@@ -998,13 +998,23 @@ async def _google_cse_search_branded(q: str, num: int = 8) -> List[str]:
         brand_tokens = [t for t in re.split(r"[\s,]+", q) if len(t) > 2]
         exact = " ".join(brand_tokens[:4])  # короткая фраза в exactTerms
         or_terms = "калории|пищевая ценность|КБЖУ|nutrition facts|питательная ценность \"на 100 г\""
-        domains = "site:ozon.ru OR site:wildberries.ru OR site:vkusvill.ru OR site:perekrestok.ru OR site:lenta.com OR site:5ka.ru OR site:metro-cc.ru OR site:auchan.ru"
+        domain_list = [
+            "ozon.ru",
+            "wildberries.ru",
+            "vkusvill.ru",
+            "perekrestok.ru",
+            "lenta.com",
+            "5ka.ru",
+            "metro-cc.ru",
+            "auchan.ru",
+        ]
+        domains = " OR ".join(f"site:{domain}" for domain in domain_list)
         negative = "-inurl:questions -inurl:reviews -inurl:otzyv -inurl:forum"
 
         params = {
             "key": GOOGLE_CSE_KEY,
             "cx": GOOGLE_CSE_CX,
-            "q": f"{q} {domains} {negative}",
+            "q": f"({q}) ({domains}) {negative}",
             "num": min(10, num),
             "exactTerms": exact,
             "orTerms": or_terms,

@@ -1004,7 +1004,7 @@ async def _google_cse_search_branded(q: str, num: int = 8) -> List[str]:
         params = {
             "key": GOOGLE_CSE_KEY,
             "cx": GOOGLE_CSE_CX,
-            "q": f"{domains} {negative}",
+            "q": f"{q} {domains} {negative}",
             "num": min(10, num),
             "exactTerms": exact,
             "orTerms": or_terms,

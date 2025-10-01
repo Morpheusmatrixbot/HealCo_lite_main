@@ -221,7 +221,7 @@ MAIN_MENU = [
 NUTRI_MENU = [
     [KeyboardButton("🍽️ Сгенерировать меню"), KeyboardButton("🔄 Изменить меню")],
     [KeyboardButton("📊 КБЖУ"), KeyboardButton("📏 ИМТ (BMI)")],
-    [KeyboardButton("🍏 Обновить дневник"), KeyboardButton("🔍 Поиск продуктов")],
+    [KeyboardButton("🍽️ Записать приём пищи")],
     [KeyboardButton("Задать вопрос ❓"), KeyboardButton("⭐ Получить мотивашку от нутрициолога")],
     [KeyboardButton("⬅️ Назад")],
 ]
@@ -4702,11 +4702,11 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE, st:
             else:
                 await update.message.reply_text(full_text, reply_markup=role_keyboard("nutri"))
             return True
-        if text == "🍏 Обновить дневник":
-            st["awaiting"] = "food_diary"
+        if text == "🍽️ Записать приём пищи":
+            st["awaiting"] = "log_food_entry"
             await update.message.reply_text(
-                "Отправьте фото с ПОДПИСЬЮ (название и ~граммы), либо просто текст блюда/продукта. 🍽️\n\n"
-                "🔍 Система поиска:\n"
+                "Отправьте фото с ПОДПИСЬЮ (название и ~граммы) или просто текст блюда/продукта. 🍽️\n\n"
+                "🔍 Подсказки для поиска:\n"
                 "• Штрих-код (8-14 цифр) → Open Food Facts\n"
                 "• Брендовые продукты → ИИ-анализ с интернет-поиском\n"
                 "• Натуральные продукты → база USDA FDC\n\n"
@@ -4747,24 +4747,6 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE, st:
             st["awaiting"] = "confirm_save_menu"
             await update.message.reply_text(plan, reply_markup=yes_no_kb("save_menu"))
             await update.message.reply_text("Записать это меню в дневник?", reply_markup=role_keyboard("nutri"))
-            return True
-        if text == "🔍 Поиск продуктов":
-            st["awaiting"] = "search_product"
-            await update.message.reply_text(
-                "🔍 Умный поиск продуктов\n\n"
-                "Введите название продукта для анализа КБЖУ:\n\n"
-                "📦 Штрих-код (8-14 цифр):\n"
-                "→ Open Food Facts (самый точный поиск)\n\n"
-                "🏷️ Брендовые продукты (йогурты, батончики, готовая еда):\n"
-                "→ ИИ-анализ с интернет-поиском\n\n"
-                "🥬 Натуральные продукты (фрукты, овощи, мясо):\n"
-                "→ База данных USDA FDC\n\n"
-                "Примеры:\n"
-                "• '4601234567890' (штрих-код)\n"
-                "• 'Данон йогурт' (брендовый)\n"
-                "• 'apple' или 'яблоко' (натуральный)\n"
-                "• 'куриная грудка' (натуральный) 🎯"
-            )
             return True
         if text == "Задать вопрос ❓":
             st["awaiting"] = "ask_nutri"
@@ -4862,7 +4844,7 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
         awaiting = st.get("awaiting")
 
         # --- Дневник питания ---
-        if awaiting == "food_diary":
+        if awaiting == "log_food_entry":
             food_count = len(st["diaries"].get("food", []))
             train_count = len(st["diaries"].get("train", []))
             if get_user_access(st, u.id) == "free" and (food_count + train_count) >= FREE_DIARY_LIMIT:
@@ -4998,6 +4980,148 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
                     reply += "\n📊 Источник: база данных"
             else:
                 reply += "❌ Продукт не найден. Попробуйте указать более точное название или добавьте бренд для готовых продуктов. 🙂"
+
+            search_feedback = ""
+            if src_text:
+                search_result = await search_product_on_internet(src_text)
+                if search_result:
+                    def _parse_amounts(s: str):
+                        grams = ml = None
+
+                        def _f(x):
+                            return float(x.replace(',', '.'))
+
+                        for m in re.finditer(r'(\d+(?:[.,]\d+)?)\s*(кг|kg)\b', s, flags=re.I):
+                            grams = (grams or 0) + _f(m.group(1)) * 1000
+                        for m in re.finditer(r'(\d+(?:[.,]\d+)?)\s*(?:г|гр|g|grams?)\b', s, flags=re.I):
+                            grams = (grams or 0) + _f(m.group(1))
+                        for m in re.finditer(r'(\d+(?:[.,]\d+)?)\s*(?:л|l|литр(?:а|ов)?)\b', s, flags=re.I):
+                            ml = (ml or 0) + _f(m.group(1)) * 1000
+                        for m in re.finditer(r'(\d+(?:[.,]\d+)?)\s*(?:мл|ml|milliliter[s]?)\b', s, flags=re.I):
+                            ml = (ml or 0) + _f(m.group(1))
+                        return grams, ml
+
+                    def _fmt(x, digits=1, unit=" г"):
+                        return f"{x:.{digits}f}{unit}" if x is not None else "— г"
+
+                    def _fmt_kcal(x):
+                        return f"{x:.0f} ккал" if x is not None else "— ккал"
+
+                    def _scale_portion(res: dict, q_text: str):
+                        g = res.get("portion_g")
+                        m = res.get("portion_ml")
+                        if g is None and m is None:
+                            gg, mm = _parse_amounts(q_text)
+                            if gg:
+                                res["portion_g"] = g = gg
+                            if mm:
+                                res["portion_ml"] = m = mm
+                        if g and res.get("kcal_100g") is not None:
+                            k = g / 100.0
+                            res["kcal_portion"] = res["kcal_100g"] * k
+                            res["protein_portion"] = (
+                                (res.get("protein_100g") or 0) * k if res.get("protein_100g") is not None else None
+                            )
+                            res["fat_portion"] = (
+                                (res.get("fat_100g") or 0) * k if res.get("fat_100g") is not None else None
+                            )
+                            res["carbs_portion"] = (
+                                (res.get("carbs_100g") or 0) * k if res.get("carbs_100g") is not None else None
+                            )
+                        elif m and res.get("kcal_100ml") is not None:
+                            k = m / 100.0
+                            res["kcal_portion"] = res["kcal_100ml"] * k
+                            res["protein_portion"] = (
+                                (res.get("protein_100ml") or 0) * k if res.get("protein_100ml") is not None else None
+                            )
+                            res["fat_portion"] = (
+                                (res.get("fat_100ml") or 0) * k if res.get("fat_100ml") is not None else None
+                            )
+                            res["carbs_portion"] = (
+                                (res.get("carbs_100ml") or 0) * k if res.get("carbs_100ml") is not None else None
+                            )
+                        return res
+
+                    formatted = _scale_portion(dict(search_result), src_text)
+                    formatted.setdefault("name", src_text)
+
+                    name_display = build_display_name(formatted, src_text)
+                    formatted["name"] = name_display
+
+                    source_map = {
+                        'google_cse_jsonld': '🔎 Google (JSON-LD)',
+                        'google_cse_regex': '🔎 Google (страница)',
+                        'vision_ocr': '🖼️ Google Vision OCR',
+                        'usda': '🌿 USDA FDC',
+                        'fallback': '📦 Fallback',
+                    }
+                    source = source_map.get(formatted.get('source'), '🔎 Источник не указан')
+
+                    lines = [
+                        "✅ Найден продукт:",
+                        f"📦 {formatted['name']}",
+                    ]
+
+                    if formatted.get('brand'):
+                        lines.append(f"🏷️ Бренд: {formatted['brand']}")
+
+                    if formatted.get("portion_g") or formatted.get("portion_ml"):
+                        portion_line = (
+                            f"⚖️ Порция: {int(formatted.get('portion_g') or 0)} г"
+                            if formatted.get("portion_g")
+                            else f"⚖️ Порция: {int(formatted.get('portion_ml') or 0)} мл"
+                        )
+                        lines.extend(
+                            [
+                                "",
+                                portion_line,
+                                "📊 На порцию:",
+                                f"🔥 Калории: {_fmt_kcal(formatted.get('kcal_portion'))}",
+                                f"🥩 Белки: {_fmt(formatted.get('protein_portion'))}",
+                                f"🥑 Жиры: {_fmt(formatted.get('fat_portion'))}",
+                                f"🍞 Углеводы: {_fmt(formatted.get('carbs_portion'))}",
+                            ]
+                        )
+
+                    if any(formatted.get(k) is not None for k in ("kcal_100g", "protein_100g", "fat_100g", "carbs_100g")):
+                        lines.extend(
+                            [
+                                "",
+                                "📊 Питательная ценность на 100 г:",
+                                f"🔥 Калории: {_fmt_kcal(formatted.get('kcal_100g'))}",
+                                f"🥩 Белки: {_fmt(formatted.get('protein_100g'))}",
+                                f"🥑 Жиры: {_fmt(formatted.get('fat_100g'))}",
+                                f"🍞 Углеводы: {_fmt(formatted.get('carbs_100g'))}",
+                            ]
+                        )
+                    elif any(
+                        formatted.get(k) is not None for k in ("kcal_100ml", "protein_100ml", "fat_100ml", "carbs_100ml")
+                    ):
+                        lines.extend(
+                            [
+                                "",
+                                "📊 Питательная ценность на 100 мл:",
+                                f"🔥 Калории: {_fmt_kcal(formatted.get('kcal_100ml'))}",
+                                f"🥩 Белки: {_fmt(formatted.get('protein_100ml'))}",
+                                f"🥑 Жиры: {_fmt(formatted.get('fat_100ml'))}",
+                                f"🍞 Углеводы: {_fmt(formatted.get('carbs_100ml'))}",
+                            ]
+                        )
+
+                    lines.extend(["", f"💡 Источник: {source}"])
+                    search_feedback = "\n".join(lines)
+                else:
+                    search_feedback = (
+                        f"❌ Продукт '{src_text}' не найден ни в одной базе данных.\n\n"
+                        "💡 Попробуйте:\n"
+                        "• Указать более точное название\n"
+                        "• Добавить название бренда для готовых продуктов\n"
+                        "• Использовать английское название для натуральных продуктов\n"
+                        "• Проверить правильность написания"
+                    )
+
+            if search_feedback:
+                reply = f"{reply}\n\n{search_feedback}" if reply else search_feedback
 
             st["diaries"]["food"].append(entry)
             st["awaiting"] = None
@@ -5417,128 +5541,6 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
             except ValueError:
                 await update.message.reply_text("Введите номер записи, 'все' или 'отмена'.")
             return
-
-        # --- Поиск продуктов ---
-        elif awaiting == "search_product":
-            if not text:
-                await update.message.reply_text("Введите название продукта для поиска.")
-                return
-
-            await update.message.reply_text("🔍 Ищу продукт в базах данных...")
-
-            # Новый агрегатор: USDA (натуралка) → Google CSE/JSON-LD → Vision (бренд)
-            search_result = await search_product_on_internet(text)
-            if search_result:
-                # ---------- helpers ----------
-                def _parse_amounts(s: str):
-                    grams = ml = None
-                    def _f(x): return float(x.replace(',', '.'))
-                    for m in re.finditer(r'(\d+(?:[.,]\d+)?)\s*(кг|kg)\b', s, flags=re.I):
-                        grams = (grams or 0) + _f(m.group(1)) * 1000
-                    for m in re.finditer(r'(\d+(?:[.,]\d+)?)\s*(?:г|гр|g|grams?)\b', s, flags=re.I):
-                        grams = (grams or 0) + _f(m.group(1))
-                    for m in re.finditer(r'(\d+(?:[.,]\d+)?)\s*(?:л|l|литр(?:а|ов)?)\b', s, flags=re.I):
-                        ml = (ml or 0) + _f(m.group(1)) * 1000
-                    for m in re.finditer(r'(\d+(?:[.,]\d+)?)\s*(?:мл|ml|milliliter[s]?)\b', s, flags=re.I):
-                        ml = (ml or 0) + _f(m.group(1))
-                    return grams, ml
-                def _fmt(x, digits=1, unit=" г"):
-                    return (f"{x:.{digits}f}{unit}" if x is not None else "— г")
-                def _fmt_kcal(x):
-                    return (f"{x:.0f} ккал" if x is not None else "— ккал")
-                def _scale_portion(res: dict, q_text: str):
-                    # если аггрегатор не вернул порцию — выдёрнем из текста
-                    g = res.get("portion_g"); m = res.get("portion_ml")
-                    if g is None and m is None:
-                        gg, mm = _parse_amounts(q_text)
-                        if gg: res["portion_g"] = g = gg
-                        if mm: res["portion_ml"] = m = mm
-                    # посчитать на порцию
-                    if g and res.get("kcal_100g") is not None:
-                        k = g / 100.0
-                        res["kcal_portion"]    = res["kcal_100g"]    * k
-                        res["protein_portion"] = (res.get("protein_100g") or 0) * k if res.get("protein_100g") is not None else None
-                        res["fat_portion"]     = (res.get("fat_100g")     or 0) * k if res.get("fat_100g")     is not None else None
-                        res["carbs_portion"]   = (res.get("carbs_100g")   or 0) * k if res.get("carbs_100g")   is not None else None
-                    elif m and res.get("kcal_100ml") is not None:
-                        k = m / 100.0
-                        res["kcal_portion"]    = res["kcal_100ml"]    * k
-                        res["protein_portion"] = (res.get("protein_100ml") or 0) * k if res.get("protein_100ml") is not None else None
-                        res["fat_portion"]     = (res.get("fat_100ml")     or 0) * k if res.get("fat_100ml")     is not None else None
-                        res["carbs_portion"]   = (res.get("carbs_100ml")   or 0) * k if res.get("carbs_100ml")   is not None else None
-                    return res
-                # привести к единому виду и досчитать «на порцию»
-                search_result = _scale_portion(dict(search_result), text)
-                search_result.setdefault('name', text)
-
-                name_display = build_display_name(search_result, text)
-                search_result['name'] = name_display
-
-                source_map = {
-                    'google_cse_jsonld': '🔎 Google (JSON-LD)',
-                    'google_cse_regex':  '🔎 Google (страница)',
-                    'vision_ocr':        '🖼️ Google Vision OCR',
-                    'usda':              '🌿 USDA FDC',
-                    'fallback':          '📦 Fallback'
-                }
-                source = source_map.get(search_result.get('source'), '🔎 Источник не указан')
-
-                lines = [
-                    f"✅ Найден продукт:",
-                    f"📦 {search_result['name']}",
-                ]
-
-                if search_result.get('brand'):
-                    lines.append(f"🏷️ Бренд: {search_result['brand']}")
-
-                # Блок «Порция», если указаны граммы/мл
-                if search_result.get("portion_g") or search_result.get("portion_ml"):
-                    portion_line = f"⚖️ Порция: {int(search_result.get('portion_g') or 0)} г" if search_result.get("portion_g") \
-                                   else f"⚖️ Порция: {int(search_result.get('portion_ml') or 0)} мл"
-                    lines.extend([
-                        "",
-                        portion_line,
-                        "📊 На порцию:",
-                        f"🔥 Калории: {_fmt_kcal(search_result.get('kcal_portion'))}",
-                        f"🥩 Белки: {_fmt(search_result.get('protein_portion'))}",
-                        f"🥑 Жиры: {_fmt(search_result.get('fat_portion'))}",
-                        f"🍞 Углеводы: {_fmt(search_result.get('carbs_portion'))}",
-                    ])
-
-                # Блок «на 100 г / 100 мл» (что есть)
-                if any(search_result.get(k) is not None for k in ("kcal_100g","protein_100g","fat_100g","carbs_100g")):
-                    lines.extend([
-                        "",
-                        "📊 Питательная ценность на 100 г:",
-                        f"🔥 Калории: {_fmt_kcal(search_result.get('kcal_100g'))}",
-                        f"🥩 Белки: {_fmt(search_result.get('protein_100g'))}",
-                        f"🥑 Жиры: {_fmt(search_result.get('fat_100g'))}",
-                        f"🍞 Углеводы: {_fmt(search_result.get('carbs_100g'))}",
-                    ])
-                elif any(search_result.get(k) is not None for k in ("kcal_100ml","protein_100ml","fat_100ml","carbs_100ml")):
-                    lines.extend([
-                        "",
-                        "📊 Питательная ценность на 100 мл:",
-                        f"🔥 Калории: {_fmt_kcal(search_result.get('kcal_100ml'))}",
-                        f"🥩 Белки: {_fmt(search_result.get('protein_100ml'))}",
-                        f"🥑 Жиры: {_fmt(search_result.get('fat_100ml'))}",
-                        f"🍞 Углеводы: {_fmt(search_result.get('carbs_100ml'))}",
-                    ])
-
-                lines.extend(["", f"💡 Источник: {source}"])
-
-                await update.message.reply_text("\n".join(lines), reply_markup=role_keyboard("nutri"))
-            else:
-                await update.message.reply_text(
-                    f"❌ Продукт '{text}' не найден ни в одной базе данных.\n\n"
-                    "💡 Попробуйте:\n"
-                    "• Указать более точное название\n"
-                    "• Добавить название бренда для готовых продуктов\n"
-                    "• Использовать английское название для натуральных продуктов\n"
-                    "• Проверить правильность написания",
-                    reply_markup=role_keyboard("nutri")
-                )
-            st["awaiting"] = None
 
         # --- Диалог с персонами ---
         elif awaiting in ("ask_nutri", "ask_trainer") or st.get("current_role") in ("nutri", "trainer") and text:

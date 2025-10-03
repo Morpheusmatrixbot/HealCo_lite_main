@@ -6067,42 +6067,35 @@ async def analyze_meal_photo(bot, file_id: str, profile: Dict[str, Any]) -> Opti
                         "confidence": confidence,
                     }
 
-    # 2. Fallback на Google Cloud Vision API
+    # 2. Fallback на Google Cloud Vision API или эвристику
     if not VISION_KEY:
         logger.warning("Vision API fallback skipped: VISION_KEY is not configured")
-        return None
+        return _build_default_photo_estimate(
+            note="🖼️ Vision отключён: используем типовую порцию 250 г"
+        )
 
     labels = await asyncio.to_thread(_vision_detect_labels, image_bytes)
     if not labels:
         logger.warning("Vision API fallback did not return any labels")
-        return None
+        return _build_default_photo_estimate(
+            note="🖼️ Vision API не нашёл ярлыки — оценка по умолчанию"
+        )
 
     matched_name, macros_info = _estimate_nutrition_from_labels(labels)
-    if macros_info:
-        kcal_100 = macros_info.get("kcal_100g", DEFAULT_ESTIMATED_MACROS["kcal_100g"])
-        protein_100 = macros_info.get("protein_100g", DEFAULT_ESTIMATED_MACROS["protein_100g"])
-        fat_100 = macros_info.get("fat_100g", DEFAULT_ESTIMATED_MACROS["fat_100g"])
-        carbs_100 = macros_info.get("carbs_100g", DEFAULT_ESTIMATED_MACROS["carbs_100g"])
-    else:
-        kcal_100 = DEFAULT_ESTIMATED_MACROS["kcal_100g"]
-        protein_100 = DEFAULT_ESTIMATED_MACROS["protein_100g"]
-        fat_100 = DEFAULT_ESTIMATED_MACROS["fat_100g"]
-        carbs_100 = DEFAULT_ESTIMATED_MACROS["carbs_100g"]
-
-    portion_grams = 250.0
-    factor = portion_grams / 100.0
     dish_name = matched_name or labels[0].title()
 
-    return {
-        "name": dish_name,
-        "portion_grams": portion_grams,
-        "kcal": int(round(kcal_100 * factor)),
-        "protein_g": round(protein_100 * factor, 1),
-        "fat_g": round(fat_100 * factor, 1),
-        "carbs_g": round(carbs_100 * factor, 1),
-        "notes": "🖼️ Vision API, типовая порция 250 г (оценка по ярлыкам)",
-        "confidence": 0.5,
-    }
+    if macros_info:
+        note_parts = ["🖼️ Vision API"]
+        if macros_info.get("source"):
+            note_parts.append(str(macros_info["source"]))
+        note = ", ".join(note_parts)
+        return _build_photo_estimate_from_macros(dish_name, macros_info, note=note, confidence=0.5)
+
+    return _build_default_photo_estimate(
+        fallback_name=dish_name,
+        note="🖼️ Vision API ярлык без типовых КБЖУ — используем базовую оценку",
+        confidence=0.4,
+    )
 
 
 def _vision_detect_labels(image_content: bytes, max_results: int = 5) -> List[str]:
@@ -6168,6 +6161,59 @@ def _estimate_nutrition_from_labels(labels: List[str]) -> Tuple[Optional[str], O
             name = info.get("name") or label
             return name, info
     return None, None
+
+
+def _resolve_macro(macros: Dict[str, Any], key: str) -> float:
+    """Возвращает значение макроса на 100 г/мл с запасным вариантом."""
+    value = macros.get(f"{key}_100g")
+    if value is None:
+        value = macros.get(f"{key}_100ml")
+    if value is None:
+        value = DEFAULT_ESTIMATED_MACROS.get(f"{key}_100g", 0.0)
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float(DEFAULT_ESTIMATED_MACROS.get(f"{key}_100g", 0.0))
+
+
+def _build_photo_estimate_from_macros(
+    dish_name: str,
+    macros: Dict[str, Any],
+    *,
+    portion_grams: float = 250.0,
+    note: str,
+    confidence: float = 0.5,
+) -> Dict[str, Any]:
+    """Формирует структуру ответа для дневника на основе макросов."""
+    factor = portion_grams / 100.0
+    kcal = _resolve_macro(macros, "kcal")
+    protein = _resolve_macro(macros, "protein")
+    fat = _resolve_macro(macros, "fat")
+    carbs = _resolve_macro(macros, "carbs")
+
+    return {
+        "name": dish_name,
+        "portion_grams": portion_grams,
+        "kcal": int(round(kcal * factor)),
+        "protein_g": round(protein * factor, 1),
+        "fat_g": round(fat * factor, 1),
+        "carbs_g": round(carbs * factor, 1),
+        "notes": note,
+        "confidence": confidence,
+    }
+
+
+def _build_default_photo_estimate(
+    *, fallback_name: str = "Блюдо по фото", note: str, confidence: float = 0.3
+) -> Dict[str, Any]:
+    """Возвращает базовую оценку для фото при отсутствии распознавания."""
+    macros = DEFAULT_ESTIMATED_MACROS
+    return _build_photo_estimate_from_macros(
+        fallback_name,
+        macros,
+        note=note,
+        confidence=confidence,
+    )
 
 
 async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict[str, Any]]:

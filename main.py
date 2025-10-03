@@ -10,6 +10,7 @@
 import os
 import re
 import json
+import io
 import asyncio
 import logging
 import random
@@ -86,6 +87,13 @@ BASIC_PRODUCTS: Dict[str, Dict[str, Any]] = {
     },
     "rice": {"name": "Rice", "kcal_100g": 130, "source": "fallback"},
     "broccoli": {"name": "Broccoli", "kcal_100g": 34, "source": "fallback"},
+}
+
+DEFAULT_ESTIMATED_MACROS: Dict[str, float] = {
+    "kcal_100g": 180.0,
+    "protein_100g": 8.0,
+    "fat_100g": 7.0,
+    "carbs_100g": 20.0,
 }
 
 # Функция для безопасного получения секретов из Replit Secrets
@@ -221,7 +229,7 @@ MAIN_MENU = [
 NUTRI_MENU = [
     [KeyboardButton("🍽️ Сгенерировать меню"), KeyboardButton("🔄 Изменить меню")],
     [KeyboardButton("📊 КБЖУ"), KeyboardButton("📏 ИМТ (BMI)")],
-    [KeyboardButton("🍏 Обновить дневник"), KeyboardButton("🔍 Поиск продуктов")],
+    [KeyboardButton("🍽️ Записать приём пищи")],
     [KeyboardButton("Задать вопрос ❓"), KeyboardButton("⭐ Получить мотивашку от нутрициолога")],
     [KeyboardButton("⬅️ Назад")],
 ]
@@ -4702,19 +4710,18 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE, st:
             else:
                 await update.message.reply_text(full_text, reply_markup=role_keyboard("nutri"))
             return True
-        if text == "🍏 Обновить дневник":
-            st["awaiting"] = "food_diary"
+        if text == "🍽️ Записать приём пищи":
+            st["awaiting"] = "log_food_entry"
             await update.message.reply_text(
-                "Отправьте фото с ПОДПИСЬЮ (название и ~граммы), либо просто текст блюда/продукта. 🍽️\n\n"
-                "🔍 Система поиска:\n"
-                "• Штрих-код (8-14 цифр) → Open Food Facts\n"
-                "• Брендовые продукты → ИИ-анализ с интернет-поиском\n"
-                "• Натуральные продукты → база USDA FDC\n\n"
-                "Для точности укажите:\n"
-                "• Штрих-код продукта (если есть на упаковке)\n"
-                "• Название бренда для готовых продуктов\n"
-                "• Вес в граммах\n"
-                "• Конкретное название",
+                "Опишите приём пищи текстом или отправьте фото (без подписи — распознаю сам). 🍽️\n\n"
+                "Что умею:\n"
+                "• Распознаю штрих-коды и бренды и сразу добавляю запись\n"
+                "• Если масса брендового продукта не указана — попрошу уточнить\n"
+                "• Анализирую фото блюд и оцениваю порцию по снимку\n\n"
+                "Подсказки:\n"
+                "• Уточняйте граммы для точного КБЖУ\n"
+                "• Для брендовых продуктов укажите марку\n"
+                "• Делайте фото при хорошем освещении",
                 reply_markup=role_keyboard("nutri"),
             )
             return True
@@ -4747,24 +4754,6 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE, st:
             st["awaiting"] = "confirm_save_menu"
             await update.message.reply_text(plan, reply_markup=yes_no_kb("save_menu"))
             await update.message.reply_text("Записать это меню в дневник?", reply_markup=role_keyboard("nutri"))
-            return True
-        if text == "🔍 Поиск продуктов":
-            st["awaiting"] = "search_product"
-            await update.message.reply_text(
-                "🔍 Умный поиск продуктов\n\n"
-                "Введите название продукта для анализа КБЖУ:\n\n"
-                "📦 Штрих-код (8-14 цифр):\n"
-                "→ Open Food Facts (самый точный поиск)\n\n"
-                "🏷️ Брендовые продукты (йогурты, батончики, готовая еда):\n"
-                "→ ИИ-анализ с интернет-поиском\n\n"
-                "🥬 Натуральные продукты (фрукты, овощи, мясо):\n"
-                "→ База данных USDA FDC\n\n"
-                "Примеры:\n"
-                "• '4601234567890' (штрих-код)\n"
-                "• 'Данон йогурт' (брендовый)\n"
-                "• 'apple' или 'яблоко' (натуральный)\n"
-                "• 'куриная грудка' (натуральный) 🎯"
-            )
             return True
         if text == "Задать вопрос ❓":
             st["awaiting"] = "ask_nutri"
@@ -4862,7 +4851,7 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
         awaiting = st.get("awaiting")
 
         # --- Дневник питания ---
-        if awaiting == "food_diary":
+        if awaiting == "log_food_entry":
             food_count = len(st["diaries"].get("food", []))
             train_count = len(st["diaries"].get("train", []))
             if get_user_access(st, u.id) == "free" and (food_count + train_count) >= FREE_DIARY_LIMIT:
@@ -4874,46 +4863,93 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
                 st["awaiting"] = None
                 return
 
-            caption, is_photo, src_text, reply = (msg.caption or "").strip(), bool(msg.photo), "", ""
-            if is_photo and not caption and not text:
-                await update.message.reply_text("Пожалуйста, добавьте ПОДПИСЬ к фото (название и ~граммы). 📸")
+            caption = (msg.caption or "").strip()
+            is_photo = bool(msg.photo)
+            user_text = caption if caption else text
+
+            if not is_photo and not user_text:
+                await update.message.reply_text("Расскажите, что вы ели, или пришлите фото. 🙂")
                 return
-            entry, src_text, reply = {"ts": now_ts()}, "", ""
+
+            entry: Dict[str, Any] = {"ts": now_ts()}
             if is_photo:
                 entry["photo"] = msg.photo[-1].file_id
-                if caption:
-                    entry["text"], src_text = caption, caption
+            if user_text:
+                entry["text"] = user_text
+
+            # Фото без подписи — пробуем распознать автоматически
+            if is_photo and not user_text:
+                analysis = await analyze_meal_photo(context.bot, entry["photo"], st.get("profile", {}))
+                if not analysis:
+                    await update.message.reply_text(
+                        "Не удалось распознать блюдо по фото. Напишите название и примерный вес, пожалуйста. 🙂"
+                    )
+                    return
+
+                entry["text"] = analysis.get("name") or "Фото блюда"
+                kcal = int(round(analysis.get("kcal", 0)))
+                protein = round(analysis.get("protein_g", 0.0), 1)
+                fat = round(analysis.get("fat_g", 0.0), 1)
+                carbs = round(analysis.get("carbs_g", 0.0), 1)
+                portion = analysis.get("portion_grams")
+
+                if kcal:
+                    entry.update({"kcal": kcal, "p": protein, "f": fat, "c": carbs})
+                    add_kcal_in(st, kcal)
+
                 add_points(st, 3)
-                reply = "Фото сохранено. +3 балла. ✅\n"
-            elif text:
-                entry["text"], src_text = text, text
-                add_points(st, 2)
-                reply = "Запись сохранена. +2 балла. ✅\n"
 
-            user_text = src_text
-            est = None
+                reply_lines = [
+                    f"Фото распознано: {entry['text']}" + (f" (~{int(portion)} г). ✅" if portion else " ✅"),
+                    f"🔥 {kcal} ккал (Б{protein:.1f}/Ж{fat:.1f}/У{carbs:.1f}).",
+                ]
+                if analysis.get("notes"):
+                    reply_lines.append(f"📋 {analysis['notes']}")
 
-            # Проверяем на штрих-код сначала, если доступен Open Food Facts
+                st["diaries"]["food"].append(entry)
+                st["awaiting"] = None
+
+                eat, burn = day_totals(st)
+                if profile_complete(st["profile"]):
+                    k = calc_kbju_weight_loss(st["profile"])
+                    reply_lines.append(
+                        f"Сегодня: съедено ~{eat} ккал; сожжено ~{burn} ккал. Рекомендация: ~{k['target_kcal']} ккал. 📊"
+                    )
+                    if k.get("training_plan_link") and k.get("training_kcal_weekly"):
+                        reply_lines.append(
+                            f"Учтён план тренировок: {k['training_plan_link']} (+{k['training_kcal_weekly']} ккал/нед.)"
+                        )
+                else:
+                    reply_lines.append(f"Сегодня: съедено ~{eat} ккал; сожжено ~{burn} ккал. 📊")
+
+                await update.message.reply_text(
+                    "\n".join(reply_lines), reply_markup=role_keyboard(st.get("current_role"))
+                )
+                return
+
+            # Для текста (или фото с подписью) используем поиск
+            src_text = user_text or ""
+            est: Optional[Dict[str, Any]] = None
+            points = 3 if is_photo else 2
+            prefix = "Фото сохранено. +3 балла. ✅" if is_photo else "Запись сохранена. +2 балла. ✅"
+
             if src_text and HAS_OPENFOOD:
                 barcode_match = re.search(r'\b\d{8,14}\b', src_text)
                 if barcode_match:
                     barcode = barcode_match.group()
                     logger.info(f"Detected barcode in diary: {barcode}")
                     try:
-                        # Извлекаем граммы из текста
                         grams_match = re.search(r'(\d+(?:[.,]\d+)?)\s*(?:г|гр|g|grams?)\b', src_text, re.I)
                         user_grams = float(grams_match.group(1).replace(',', '.')) if grams_match else 100
                         logger.info(f"User grams for barcode: {user_grams}")
-                        
+
                         barcode_result = await off_by_barcode(barcode, grams=user_grams)
                         logger.info(f"Barcode search result: {barcode_result}")
-                        
+
                         if barcode_result and (barcode_result.get('kcal_100g') or barcode_result.get('kcal_portion')):
-                            # Конвертируем в формат ai_meal_json
                             kcal_portion = barcode_result.get('kcal_portion')
                             kcal_100g = barcode_result.get('kcal_100g', 0)
-                            
-                            # Если нет порционных данных, рассчитываем сами
+
                             if kcal_portion is None and kcal_100g and user_grams:
                                 factor = user_grams / 100.0
                                 kcal_portion = kcal_100g * factor
@@ -4924,20 +4960,19 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
                                 protein_portion = barcode_result.get('protein_portion', 0) or 0
                                 fat_portion = barcode_result.get('fat_portion', 0) or 0
                                 carbs_portion = barcode_result.get('carbs_portion', 0) or 0
-                            
-                            # Если все еще нет порционных данных, используем данные на 100г
+
                             if not kcal_portion and kcal_100g:
                                 kcal_portion = kcal_100g
                                 protein_portion = barcode_result.get('protein_100g', 0) or 0
                                 fat_portion = barcode_result.get('fat_100g', 0) or 0
                                 carbs_portion = barcode_result.get('carbs_100g', 0) or 0
-                            
+
                             est = {
                                 'kcal': int(kcal_portion or 0),
                                 'protein_g': round(protein_portion, 1),
                                 'fat_g': round(fat_portion, 1),
                                 'carbs_g': round(carbs_portion, 1),
-                                'notes': f"📦 Open Food Facts (штрих-код): {barcode_result.get('name', user_text)} ({user_grams}г)",
+                                'notes': f"📦 Open Food Facts (штрих-код): {barcode_result.get('name', src_text)} ({user_grams}г)",
                                 'source_data': {
                                     'grams': user_grams,
                                     'kcal_100g': kcal_100g,
@@ -4946,19 +4981,39 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
                                     'carbs_100g': barcode_result.get('carbs_100g', 0)
                                 }
                             }
-                            logger.info(f"Successfully found product by barcode: {barcode_result.get('name', 'Unknown')}, final est: {est}")
+                            logger.info(
+                                "Successfully found product by barcode: %s, final est: %s",
+                                barcode_result.get('name', 'Unknown'),
+                                est,
+                            )
                         else:
                             logger.warning(f"Barcode result missing nutrition data: {barcode_result}")
                     except Exception as e:
                         logger.warning(f"Barcode search failed: {e}")
-                        import traceback
-                        logger.warning(f"Barcode search traceback: {traceback.format_exc()}")
+                        logger.warning(traceback.format_exc())
 
-            # Если штрих-код не сработал, используем обычный поиск
-            if not est:
+            if not est and src_text:
                 logger.info(f"Barcode search failed, trying general search for: {src_text}")
-                est = await ai_meal_json(st["profile"], src_text) if src_text else None
+                est = await ai_meal_json(st["profile"], src_text)
                 logger.info(f"General search result: {est}")
+
+            if est and est.get("needs_grams"):
+                st["tmp"]["pending_brand_entry"] = {
+                    "entry": entry,
+                    "query": src_text,
+                    "base_est": est,
+                    "is_photo": is_photo,
+                    "points": points,
+                    "prefix": prefix,
+                }
+                st["awaiting"] = "brand_portion_input"
+                await update.message.reply_text(
+                    "Сколько граммов вы съели для продукта «{}»? Напишите число или 'отмена'."
+                    .format(entry.get("text", src_text or "продукт"))
+                )
+                return
+
+            reply_lines = [prefix]
 
             if est and est.get("kcal"):
                 kcal = int(est["kcal"])
@@ -4966,52 +5021,171 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
                 fat = round(est.get("fat_g", 0), 1)
                 carbs = round(est.get("carbs_g", 0), 1)
 
-                entry.update(
-                    {
-                        "kcal": kcal,
-                        "p": protein,
-                        "f": fat,
-                        "c": carbs,
-                    }
-                )
+                entry.update({"kcal": kcal, "p": protein, "f": fat, "c": carbs})
                 add_kcal_in(st, kcal)
 
-                # Получаем информацию о граммовке из источника
                 source_note = est.get('notes', 'анализ')
                 source_data = est.get('source_data', {})
                 grams = source_data.get('grams', 100)
 
-                # Упрощенное отображение результата - всегда показываем что было рассчитано
                 if grams != 100:
-                    reply += f"✅ Рассчитано для {grams}г: {kcal} ккал (Б{protein:.1f}/Ж{fat:.1f}/У{carbs:.1f}). 🍽️"
+                    reply_lines.append(
+                        f"✅ Рассчитано для {int(grams)}г: {kcal} ккал (Б{protein:.1f}/Ж{fat:.1f}/У{carbs:.1f}). 🍽️"
+                    )
                 else:
-                    reply += f"✅ Рассчитано для 100г: {kcal} ккал (Б{protein:.1f}/Ж{fat:.1f}/У{carbs:.1f}). 🍽️"
+                    reply_lines.append(
+                        f"✅ Рассчитано для 100г: {kcal} ккал (Б{protein:.1f}/Ж{fat:.1f}/У{carbs:.1f}). 🍽️"
+                    )
 
-                # Добавляем информацию об источнике данных
                 if "USDA FDC" in source_note:
-                    reply += "\n📊 Источник: база USDA FDC"
+                    reply_lines.append("📊 Источник: база USDA FDC")
                 elif "Open Food Facts" in source_note:
-                    reply += "\n📊 Источник: Open Food Facts"
+                    reply_lines.append("📊 Источник: Open Food Facts")
                 elif "Умный поиск" in source_note:
-                    reply += "\n📊 Источник: умный поиск"
+                    reply_lines.append("📊 Источник: умный поиск")
                 elif "База данных" in source_note:
-                    reply += "\n📊 Источник: база данных"
+                    reply_lines.append("📊 Источник: база данных")
+                elif est.get("notes"):
+                    reply_lines.append(est["notes"])
             else:
-                reply += "❌ Продукт не найден. Попробуйте указать более точное название или добавьте бренд для готовых продуктов. 🙂"
+                reply_lines.append(
+                    "❌ Продукт не найден. Попробуйте указать более точное название или добавьте бренд для готовых продуктов. 🙂"
+                )
 
             st["diaries"]["food"].append(entry)
+            add_points(st, points)
             st["awaiting"] = None
+
             eat, burn = day_totals(st)
             if profile_complete(st["profile"]):
                 k = calc_kbju_weight_loss(st["profile"])
-                reply += f"\nСегодня: съедено ~{eat} ккал; сожжено ~{burn} ккал. Рекомендация: ~{k['target_kcal']} ккал. 📊"
+                reply_lines.append(
+                    f"Сегодня: съедено ~{eat} ккал; сожжено ~{burn} ккал. Рекомендация: ~{k['target_kcal']} ккал. 📊"
+                )
                 if k.get("training_plan_link") and k.get("training_kcal_weekly"):
-                    reply += (
-                        f"\nУчтён план тренировок: {k['training_plan_link']} (+{k['training_kcal_weekly']} ккал/нед.)"
+                    reply_lines.append(
+                        f"Учтён план тренировок: {k['training_plan_link']} (+{k['training_kcal_weekly']} ккал/нед.)"
                     )
             else:
-                reply += f"\nСегодня: съедено ~{eat} ккал; сожжено ~{burn} ккал. 📊"
-            await update.message.reply_text(reply, reply_markup=role_keyboard(st.get("current_role")))
+                reply_lines.append(f"Сегодня: съедено ~{eat} ккал; сожжено ~{burn} ккал. 📊")
+
+            await update.message.reply_text(
+                "\n".join(reply_lines), reply_markup=role_keyboard(st.get("current_role"))
+            )
+
+        elif awaiting == "brand_portion_input":
+            pending = st["tmp"].get("pending_brand_entry")
+            if not pending:
+                st["awaiting"] = None
+                await update.message.reply_text(
+                    "Нет ожидающего продукта. Начните заново через кнопку «🍽️ Записать приём пищи».",
+                    reply_markup=role_keyboard(st.get("current_role")),
+                )
+                return
+
+            if not text:
+                await update.message.reply_text("Введите массу порции в граммах или напишите «отмена».")
+                return
+
+            if text.strip().lower() in {"отмена", "cancel"}:
+                st["tmp"].pop("pending_brand_entry", None)
+                st["awaiting"] = None
+                await update.message.reply_text("Ок, запись не добавлена.", reply_markup=role_keyboard(st.get("current_role")))
+                return
+
+            try:
+                grams = float(text.replace(",", "."))
+                if grams <= 0:
+                    raise ValueError
+            except ValueError:
+                await update.message.reply_text(
+                    "Укажите массу числом в граммах, например 75. Или напишите «отмена»."
+                )
+                return
+
+            query = pending.get("query", "").strip()
+            enriched_query = f"{query} {grams:g}г".strip() if query else ""
+            est = await ai_meal_json(st["profile"], enriched_query) if enriched_query else None
+
+            if not est or est.get("needs_grams"):
+                base_est = pending.get("base_est") or {}
+                source_data = base_est.get("source_data", {})
+                base_grams = source_data.get("grams") or 100
+                try:
+                    factor = grams / base_grams if base_grams else 1.0
+                    kcal_per = source_data.get("kcal_100g") or base_est.get("kcal", 0)
+                    protein_per = source_data.get("protein_100g") or base_est.get("protein_g", 0)
+                    fat_per = source_data.get("fat_100g") or base_est.get("fat_g", 0)
+                    carbs_per = source_data.get("carbs_100g") or base_est.get("carbs_g", 0)
+                    est = {
+                        "kcal": int(round((kcal_per or 0) * factor)),
+                        "protein_g": round((protein_per or 0) * factor, 1),
+                        "fat_g": round((fat_per or 0) * factor, 1),
+                        "carbs_g": round((carbs_per or 0) * factor, 1),
+                        "notes": base_est.get("notes", "📦 Пересчёт по данным 100 г"),
+                        "source_data": {
+                            "grams": grams,
+                            "kcal_100g": kcal_per or 0,
+                            "protein_100g": protein_per or 0,
+                            "fat_100g": fat_per or 0,
+                            "carbs_100g": carbs_per or 0,
+                        },
+                    }
+                except Exception as e:
+                    logger.warning(f"Fallback brand scaling failed: {e}")
+                    est = None
+
+            if not est:
+                st["awaiting"] = None
+                st["tmp"].pop("pending_brand_entry", None)
+                await update.message.reply_text(
+                    "Не удалось пересчитать КБЖУ. Попробуйте снова через поиск или уточните название.",
+                    reply_markup=role_keyboard(st.get("current_role")),
+                )
+                return
+
+            entry = pending.get("entry") or {"ts": now_ts()}
+            if not entry.get("text") and query:
+                entry["text"] = query
+
+            kcal = int(est.get("kcal", 0) or 0)
+            protein = round(est.get("protein_g", 0) or 0, 1)
+            fat = round(est.get("fat_g", 0) or 0, 1)
+            carbs = round(est.get("carbs_g", 0) or 0, 1)
+
+            entry.update({"kcal": kcal, "p": protein, "f": fat, "c": carbs})
+            add_kcal_in(st, kcal)
+
+            prefix = pending.get("prefix") or (
+                "Фото сохранено. +3 балла. ✅" if pending.get("is_photo") else "Запись сохранена. +2 балла. ✅"
+            )
+            reply_lines = [prefix, f"✅ Рассчитано для {int(round(grams))}г: {kcal} ккал (Б{protein:.1f}/Ж{fat:.1f}/У{carbs:.1f}). 🍽️"]
+
+            note_text = est.get("notes")
+            if note_text:
+                reply_lines.append(note_text)
+
+            st["diaries"]["food"].append(entry)
+            add_points(st, pending.get("points", 2))
+            st["awaiting"] = None
+            st["tmp"].pop("pending_brand_entry", None)
+
+            eat, burn = day_totals(st)
+            if profile_complete(st["profile"]):
+                k = calc_kbju_weight_loss(st["profile"])
+                reply_lines.append(
+                    f"Сегодня: съедено ~{eat} ккал; сожжено ~{burn} ккал. Рекомендация: ~{k['target_kcal']} ккал. 📊"
+                )
+                if k.get("training_plan_link") and k.get("training_kcal_weekly"):
+                    reply_lines.append(
+                        f"Учтён план тренировок: {k['training_plan_link']} (+{k['training_kcal_weekly']} ккал/нед.)"
+                    )
+            else:
+                reply_lines.append(f"Сегодня: съедено ~{eat} ккал; сожжено ~{burn} ккал. 📊")
+
+            await update.message.reply_text(
+                "\n".join(reply_lines), reply_markup=role_keyboard(st.get("current_role"))
+            )
 
         # --- Подтверждение сохранения меню ---
         elif awaiting == "confirm_save_menu":
@@ -5418,128 +5592,6 @@ async def handle_text_or_photo(update: Update, context: ContextTypes.DEFAULT_TYP
                 await update.message.reply_text("Введите номер записи, 'все' или 'отмена'.")
             return
 
-        # --- Поиск продуктов ---
-        elif awaiting == "search_product":
-            if not text:
-                await update.message.reply_text("Введите название продукта для поиска.")
-                return
-
-            await update.message.reply_text("🔍 Ищу продукт в базах данных...")
-
-            # Новый агрегатор: USDA (натуралка) → Google CSE/JSON-LD → Vision (бренд)
-            search_result = await search_product_on_internet(text)
-            if search_result:
-                # ---------- helpers ----------
-                def _parse_amounts(s: str):
-                    grams = ml = None
-                    def _f(x): return float(x.replace(',', '.'))
-                    for m in re.finditer(r'(\d+(?:[.,]\d+)?)\s*(кг|kg)\b', s, flags=re.I):
-                        grams = (grams or 0) + _f(m.group(1)) * 1000
-                    for m in re.finditer(r'(\d+(?:[.,]\d+)?)\s*(?:г|гр|g|grams?)\b', s, flags=re.I):
-                        grams = (grams or 0) + _f(m.group(1))
-                    for m in re.finditer(r'(\d+(?:[.,]\d+)?)\s*(?:л|l|литр(?:а|ов)?)\b', s, flags=re.I):
-                        ml = (ml or 0) + _f(m.group(1)) * 1000
-                    for m in re.finditer(r'(\d+(?:[.,]\d+)?)\s*(?:мл|ml|milliliter[s]?)\b', s, flags=re.I):
-                        ml = (ml or 0) + _f(m.group(1))
-                    return grams, ml
-                def _fmt(x, digits=1, unit=" г"):
-                    return (f"{x:.{digits}f}{unit}" if x is not None else "— г")
-                def _fmt_kcal(x):
-                    return (f"{x:.0f} ккал" if x is not None else "— ккал")
-                def _scale_portion(res: dict, q_text: str):
-                    # если аггрегатор не вернул порцию — выдёрнем из текста
-                    g = res.get("portion_g"); m = res.get("portion_ml")
-                    if g is None and m is None:
-                        gg, mm = _parse_amounts(q_text)
-                        if gg: res["portion_g"] = g = gg
-                        if mm: res["portion_ml"] = m = mm
-                    # посчитать на порцию
-                    if g and res.get("kcal_100g") is not None:
-                        k = g / 100.0
-                        res["kcal_portion"]    = res["kcal_100g"]    * k
-                        res["protein_portion"] = (res.get("protein_100g") or 0) * k if res.get("protein_100g") is not None else None
-                        res["fat_portion"]     = (res.get("fat_100g")     or 0) * k if res.get("fat_100g")     is not None else None
-                        res["carbs_portion"]   = (res.get("carbs_100g")   or 0) * k if res.get("carbs_100g")   is not None else None
-                    elif m and res.get("kcal_100ml") is not None:
-                        k = m / 100.0
-                        res["kcal_portion"]    = res["kcal_100ml"]    * k
-                        res["protein_portion"] = (res.get("protein_100ml") or 0) * k if res.get("protein_100ml") is not None else None
-                        res["fat_portion"]     = (res.get("fat_100ml")     or 0) * k if res.get("fat_100ml")     is not None else None
-                        res["carbs_portion"]   = (res.get("carbs_100ml")   or 0) * k if res.get("carbs_100ml")   is not None else None
-                    return res
-                # привести к единому виду и досчитать «на порцию»
-                search_result = _scale_portion(dict(search_result), text)
-                search_result.setdefault('name', text)
-
-                name_display = build_display_name(search_result, text)
-                search_result['name'] = name_display
-
-                source_map = {
-                    'google_cse_jsonld': '🔎 Google (JSON-LD)',
-                    'google_cse_regex':  '🔎 Google (страница)',
-                    'vision_ocr':        '🖼️ Google Vision OCR',
-                    'usda':              '🌿 USDA FDC',
-                    'fallback':          '📦 Fallback'
-                }
-                source = source_map.get(search_result.get('source'), '🔎 Источник не указан')
-
-                lines = [
-                    f"✅ Найден продукт:",
-                    f"📦 {search_result['name']}",
-                ]
-
-                if search_result.get('brand'):
-                    lines.append(f"🏷️ Бренд: {search_result['brand']}")
-
-                # Блок «Порция», если указаны граммы/мл
-                if search_result.get("portion_g") or search_result.get("portion_ml"):
-                    portion_line = f"⚖️ Порция: {int(search_result.get('portion_g') or 0)} г" if search_result.get("portion_g") \
-                                   else f"⚖️ Порция: {int(search_result.get('portion_ml') or 0)} мл"
-                    lines.extend([
-                        "",
-                        portion_line,
-                        "📊 На порцию:",
-                        f"🔥 Калории: {_fmt_kcal(search_result.get('kcal_portion'))}",
-                        f"🥩 Белки: {_fmt(search_result.get('protein_portion'))}",
-                        f"🥑 Жиры: {_fmt(search_result.get('fat_portion'))}",
-                        f"🍞 Углеводы: {_fmt(search_result.get('carbs_portion'))}",
-                    ])
-
-                # Блок «на 100 г / 100 мл» (что есть)
-                if any(search_result.get(k) is not None for k in ("kcal_100g","protein_100g","fat_100g","carbs_100g")):
-                    lines.extend([
-                        "",
-                        "📊 Питательная ценность на 100 г:",
-                        f"🔥 Калории: {_fmt_kcal(search_result.get('kcal_100g'))}",
-                        f"🥩 Белки: {_fmt(search_result.get('protein_100g'))}",
-                        f"🥑 Жиры: {_fmt(search_result.get('fat_100g'))}",
-                        f"🍞 Углеводы: {_fmt(search_result.get('carbs_100g'))}",
-                    ])
-                elif any(search_result.get(k) is not None for k in ("kcal_100ml","protein_100ml","fat_100ml","carbs_100ml")):
-                    lines.extend([
-                        "",
-                        "📊 Питательная ценность на 100 мл:",
-                        f"🔥 Калории: {_fmt_kcal(search_result.get('kcal_100ml'))}",
-                        f"🥩 Белки: {_fmt(search_result.get('protein_100ml'))}",
-                        f"🥑 Жиры: {_fmt(search_result.get('fat_100ml'))}",
-                        f"🍞 Углеводы: {_fmt(search_result.get('carbs_100ml'))}",
-                    ])
-
-                lines.extend(["", f"💡 Источник: {source}"])
-
-                await update.message.reply_text("\n".join(lines), reply_markup=role_keyboard("nutri"))
-            else:
-                await update.message.reply_text(
-                    f"❌ Продукт '{text}' не найден ни в одной базе данных.\n\n"
-                    "💡 Попробуйте:\n"
-                    "• Указать более точное название\n"
-                    "• Добавить название бренда для готовых продуктов\n"
-                    "• Использовать английское название для натуральных продуктов\n"
-                    "• Проверить правильность написания",
-                    reply_markup=role_keyboard("nutri")
-                )
-            st["awaiting"] = None
-
         # --- Диалог с персонами ---
         elif awaiting in ("ask_nutri", "ask_trainer") or st.get("current_role") in ("nutri", "trainer") and text:
             if not text:
@@ -5925,6 +5977,196 @@ async def search_product_on_internet(user_text: str) -> Optional[Dict[str, Any]]
         logger.error(f"search_product_on_internet error: {e}")
         return None
 
+async def analyze_meal_photo(bot, file_id: str, profile: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Анализирует фото блюда через мульти-модальный LLM и возвращает оценку КБЖУ."""
+    try:
+        tg_file = await bot.get_file(file_id)
+        buffer = io.BytesIO()
+        await tg_file.download_to_memory(out=buffer)
+        image_bytes = buffer.getvalue()
+    except Exception as e:
+        logger.warning(f"Не удалось скачать фото для анализа: {e}")
+        return None
+
+    # 1. Попытка анализа через OpenAI Vision, если доступен
+    if client and LLM_PROVIDER == "openai":
+        base64_image = base64.b64encode(image_bytes).decode("utf-8")
+
+        system_prompt = (
+            "Ты нутрициолог и эксперт по распознаваию блюд. "
+            "Определи блюдо на фото, оцени примерный вес порции и рассчитанные КБЖУ. "
+            "Ответ верни строго в формате JSON без пояснений. "
+            "Структура: {\"name\": string, \"portion_grams\": number|null, \"kcal\": number, "
+            "\"protein_g\": number, \"fat_g\": number, \"carbs_g\": number, "
+            "\"confidence\": number (0..1), \"notes\": string}."
+        )
+
+        user_instructions = (
+            "Проанализируй фото приёма пищи, дай краткое название блюда и оцени массу в граммах. "
+            "Если блюд несколько, выбери основное. Укажи ориентировочные КБЖУ для порции."
+        )
+
+        data_url = f"data:image/jpeg;base64,{base64_image}"
+
+        try:
+            def _call():
+                return client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": user_instructions},
+                                {"type": "image_url", "image_url": {"url": data_url}},
+                            ],
+                        },
+                    ],
+                    temperature=0,
+                )
+
+            response = await asyncio.to_thread(_call)
+            content = response.choices[0].message.content if response.choices else ""
+        except Exception as e:
+            logger.warning(f"Vision model error: {e}")
+            content = None
+
+        if content:
+            parsed = _safe_json_parse(content)
+            if not parsed:
+                logger.warning(f"Vision model returned non-JSON response: {content[:200]}")
+            else:
+                try:
+                    name = str(parsed.get("name") or "Блюдо")
+                    portion_grams = parsed.get("portion_grams")
+                    if portion_grams is not None:
+                        portion_grams = max(0, float(portion_grams))
+                    kcal = int(round(float(parsed.get("kcal", 0))))
+                    protein = float(parsed.get("protein_g", 0) or 0)
+                    fat = float(parsed.get("fat_g", 0) or 0)
+                    carbs = float(parsed.get("carbs_g", 0) or 0)
+                    confidence = parsed.get("confidence")
+                    notes = parsed.get("notes")
+                except Exception as e:
+                    logger.warning(f"Failed to normalize vision response: {e}; payload={parsed}")
+                else:
+                    note_parts = ["🖼️ Фото-анализ"]
+                    if isinstance(confidence, (int, float)):
+                        note_parts.append(f"уверенность {int(confidence * 100)}%")
+                    if notes:
+                        note_parts.append(str(notes))
+
+                    return {
+                        "name": name,
+                        "portion_grams": portion_grams,
+                        "kcal": kcal,
+                        "protein_g": round(protein, 1),
+                        "fat_g": round(fat, 1),
+                        "carbs_g": round(carbs, 1),
+                        "notes": ", ".join(note_parts),
+                        "confidence": confidence,
+                    }
+
+    # 2. Fallback на Google Cloud Vision API
+    labels = await asyncio.to_thread(_vision_detect_labels, image_bytes)
+    if not labels:
+        logger.warning("Vision API fallback did not return any labels")
+        return None
+
+    matched_name, macros_info = _estimate_nutrition_from_labels(labels)
+    if macros_info:
+        kcal_100 = macros_info.get("kcal_100g", DEFAULT_ESTIMATED_MACROS["kcal_100g"])
+        protein_100 = macros_info.get("protein_100g", DEFAULT_ESTIMATED_MACROS["protein_100g"])
+        fat_100 = macros_info.get("fat_100g", DEFAULT_ESTIMATED_MACROS["fat_100g"])
+        carbs_100 = macros_info.get("carbs_100g", DEFAULT_ESTIMATED_MACROS["carbs_100g"])
+    else:
+        kcal_100 = DEFAULT_ESTIMATED_MACROS["kcal_100g"]
+        protein_100 = DEFAULT_ESTIMATED_MACROS["protein_100g"]
+        fat_100 = DEFAULT_ESTIMATED_MACROS["fat_100g"]
+        carbs_100 = DEFAULT_ESTIMATED_MACROS["carbs_100g"]
+
+    portion_grams = 250.0
+    factor = portion_grams / 100.0
+    dish_name = matched_name or labels[0].title()
+
+    return {
+        "name": dish_name,
+        "portion_grams": portion_grams,
+        "kcal": int(round(kcal_100 * factor)),
+        "protein_g": round(protein_100 * factor, 1),
+        "fat_g": round(fat_100 * factor, 1),
+        "carbs_g": round(carbs_100 * factor, 1),
+        "notes": "🖼️ Vision API, типовая порция 250 г (оценка по ярлыкам)",
+        "confidence": 0.5,
+    }
+
+
+def _vision_detect_labels(image_content: bytes, max_results: int = 5) -> List[str]:
+    """Получает ярлыки блюда через Google Cloud Vision API."""
+    if not VISION_KEY:
+        logger.warning("VISION_KEY is not set for Vision API fallback")
+        return []
+
+    endpoint = f"https://vision.googleapis.com/v1/images:annotate?key={VISION_KEY}"
+    image_b64 = base64.b64encode(image_content).decode("utf-8")
+    payload = {
+        "requests": [
+            {
+                "image": {"content": image_b64},
+                "features": [
+                    {"type": "LABEL_DETECTION", "maxResults": max_results},
+                    {"type": "WEB_DETECTION", "maxResults": max_results},
+                ],
+            }
+        ]
+    }
+
+    try:
+        response = requests.post(endpoint, json=payload, timeout=15)
+        response.raise_for_status()
+        data = response.json()
+    except Exception as e:
+        logger.warning(f"Vision API request failed: {e}")
+        return []
+
+    responses = data.get("responses") or []
+    if not responses:
+        return []
+
+    first = responses[0] or {}
+    labels: List[str] = []
+
+    for item in first.get("labelAnnotations", []) or []:
+        desc = item.get("description")
+        if desc:
+            labels.append(desc.lower())
+
+    web_entities = (first.get("webDetection") or {}).get("webEntities") or []
+    for item in web_entities:
+        desc = item.get("description")
+        if desc:
+            labels.append(desc.lower())
+
+    seen = set()
+    deduped: List[str] = []
+    for label in labels:
+        if label not in seen:
+            seen.add(label)
+            deduped.append(label)
+
+    return deduped[:max_results]
+
+
+def _estimate_nutrition_from_labels(labels: List[str]) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
+    """Подбирает типичные КБЖУ для распознанных ярлыков блюда."""
+    for label in labels:
+        info = get_typical_nutrition(label)
+        if info:
+            name = info.get("name") or label
+            return name, info
+    return None, None
+
+
 async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict[str, Any]]:
     """
     Главная функция поиска продуктов с использованием множественных источников
@@ -6163,6 +6405,17 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
         name_display = build_display_name(result, user_text, fallback=clean_query)
         result['name'] = name_display
 
+        needs_grams = False
+        if route_info["path"] == "brand" and not user_grams:
+            portion_candidates = [
+                result.get("portion_g"),
+                result.get("portion_grams"),
+                result.get("serving_g"),
+                result.get("portion_ml"),
+                result.get("kcal_portion"),
+            ]
+            needs_grams = not any(pc for pc in portion_candidates if pc)
+
         # Обновляем маппинг источников
         source_map = {
             'google_cse_jsonld': '🔎 Google (JSON-LD)',
@@ -6214,7 +6467,8 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
                     'protein_100g': result.get('protein_100g', 0),
                     'fat_100g': result.get('fat_100g', 0),
                     'carbs_100g': result.get('carbs_100g', 0)
-                }
+                },
+                'needs_grams': False,
             }
         else:
             # Возвращаем данные на 100г
@@ -6249,7 +6503,8 @@ async def ai_meal_json(profile: Dict[str, Any], user_text: str) -> Optional[Dict
                     'protein_100g': result.get('protein_100g', 0),
                     'fat_100g': result.get('fat_100g', 0),
                     'carbs_100g': result.get('carbs_100g', 0)
-                }
+                },
+                'needs_grams': needs_grams,
             }
         
     except Exception as e:

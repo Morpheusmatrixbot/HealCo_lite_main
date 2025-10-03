@@ -6068,6 +6068,10 @@ async def analyze_meal_photo(bot, file_id: str, profile: Dict[str, Any]) -> Opti
                     }
 
     # 2. Fallback на Google Cloud Vision API
+    if not VISION_KEY:
+        logger.warning("Vision API fallback skipped: VISION_KEY is not configured")
+        return None
+
     labels = await asyncio.to_thread(_vision_detect_labels, image_bytes)
     if not labels:
         logger.warning("Vision API fallback did not return any labels")
@@ -6104,7 +6108,6 @@ async def analyze_meal_photo(bot, file_id: str, profile: Dict[str, Any]) -> Opti
 def _vision_detect_labels(image_content: bytes, max_results: int = 5) -> List[str]:
     """Получает ярлыки блюда через Google Cloud Vision API."""
     if not VISION_KEY:
-        logger.warning("VISION_KEY is not set for Vision API fallback")
         return []
 
     endpoint = f"https://vision.googleapis.com/v1/images:annotate?key={VISION_KEY}"
